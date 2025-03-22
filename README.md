@@ -22,25 +22,39 @@ For clarity, in this context the word “band” means group of Z-orders.
 
 Like ZBID_DESKTOP, other bands also can be subdivided in 2 groups: **normal and topmost window**.
 
-The order of bands are the following, from the lowest to the highest Z-order (some ZBID orders are unknown for me ATM):
+The order of bands are the following, from the lowest to the highest Z-order:
 
-ZBID_DEFAULT 0 Default Z segment（ZBID_DESKTOP）
-ZBID_DESKTOP 1 Normal window
-ZBID_IMMERSIVE_RESTRICTED 14 ** Generally not used **
-ZBID_IMMERSIVE_BACKGROUND 12
-ZBID_IMMERSIVE_INACTIVEDOCK 9 ** Generally not used **
-ZBID_IMMERSIVE_INACTIVEMOBODY 8 ** Generally not used **
-ZBID_IMMERSIVE_ACTIVEDOCK 11 ** Generally not used **
-ZBID_IMMERSIVE_ACTIVEMOBODY 10 ** Generally not used **
-ZBID_IMMERSIVE_APPCHROME 5 Task View (Win+Tab menu)
-ZBID_IMMERSIVE_MOGO 6 Start menu, taskbar
-ZBID_IMMERSIVE_SEARCH 13 Cortana、Windows search
-ZBID_IMMERSIVE_NOTIFICATION 4 Operation Center (Notification Center)
-ZBID_IMMERSIVE_EDGY 7
-ZBID_SYSTEM_TOOLS 15 Top task manager, Alt+Tab menu
-ZBID_LOCK (>= Win10) 16 Lock screen interface
-ZBID_ABOVELOCK_UX (>= Win10) 17 real-time playback window
-ZBID_IMMERSIVE_IHM 3
-ZBID_GENUINE_WINDOWS 14 'Activate Windows' window
-ZBID_UIACCESS 2 Screen keyboard, magnifying glass
-Visualizing Window bands
+| ZBID Name | Value | Description |
+| :-----: | :-----: | :----- |
+| ZBID_DEFAULT | 0 | Default Z segment（ZBID_DESKTOP）|
+| ZBID_DESKTOP | 1 | Normal window|
+| ZBID_IMMERSIVE_RESTRICTED | 14 | \[Generally not used\]|
+| ZBID_IMMERSIVE_BACKGROUND | 12 |  |
+| ZBID_IMMERSIVE_INACTIVEDOCK | 9 | \[Generally not used\]|
+| ZBID_IMMERSIVE_INACTIVEMOBODY | 8 | \[Generally not used\]|
+| ZBID_IMMERSIVE_ACTIVEDOCK | 11 | \[Generally not used\]|
+| ZBID_IMMERSIVE_ACTIVEMOBODY | 10 | \[Generally not used\]|
+| ZBID_IMMERSIVE_APPCHROME | 5 | Task View (Win+Tab menu)|
+| ZBID_IMMERSIVE_MOGO | 6 | Start menu, taskbar|
+| ZBID_IMMERSIVE_SEARCH | 13 | Cortana、Windows search|
+| ZBID_IMMERSIVE_NOTIFICATION | 4 | Operation Center (Notification Center)|
+| ZBID_IMMERSIVE_EDGY | 7 |  |
+| ZBID_SYSTEM_TOOLS | 15 | Top task manager, Alt+Tab menu|
+| ZBID_LOCK (>= Win10) | 16 | Lock screen interface|
+| ZBID_ABOVELOCK_UX (>= Win10) | 17 | real-time playback window|
+| ZBID_IMMERSIVE_IHM | 3 |  |
+| ZBID_GENUINE_WINDOWS | 14 | 'Activate Windows' window|
+| ZBID_UIACCESS | 2 | Screen keyboard, magnifying glass|
+
+## Visualizing Window bands
+
+ZBID_DESKTOP: this band is where all our window stays on. Let’s suppose you have 2 window here, Paint and Photos. Both are desktop windows, and they can overlap each other by just focusing a window or another. Now suppose that Paint window is topmost, now it will stay on top of Photos, regardless of its focus state.
+
+ZBID_IMMERSIVE_MOGO: this band is used by the start menu AND the taskbar (only if the start menu is open).
+
+
+ZBID_IMMERSIVE_NOTIFICATIONS: used by the Action Center, notifications and some system flyouts (e.g. Network, Volume).
+
+ZBID_SYSTEM_TOOLS: used by Task Manager with “Always on Top” enabled, Alt-Tab view.
+
+ZBID_ABOVELOCK_UX: used by “Playing Now”. This band and anything else higher will stay on top of the lock screen.
