@@ -14,6 +14,9 @@ https://www.bilibili.com/video/BV1HCwwegEVp (Chinese)
 https://www.bilibili.com/opus/1023826882327478276 (Chinese)
 - - -
 ## Defining Window Z-order “band”
+
+![Windows z-order](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/Windows%20z-order.png?raw=true)
+
 For clarity, in this context the word “band” means group of Z-orders.
 
 **Until Windows 8, there was only one band, the ZBID_DESKTOP band**, which is the default one when you write an application that creates a new window and when it gains focus it will go to the highest Z-order meaning it will go on top of other windows. This is true unless there are **topmost windows**. As the name says, **it will stay on top of other windows**. What if there are 2 topmost windows? Well, in this case, **the last window to gain focus will stay on top of other one**. In the end there are 2 groups of Z-order in the ZBID_DESKTOP band, normal and topmost. These will never be “touched” by each other, **topmost window will always stay on top of other normal window**, no matter what.
@@ -48,13 +51,38 @@ The order of bands are the following, from the lowest to the highest Z-order:
 
 ## Visualizing Window bands
 
+![ZBID_DESKTOP](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_DESKTOP.png?raw=true)
+
 ZBID_DESKTOP: this band is where all our window stays on. Let’s suppose you have 2 window here, Paint and Photos. Both are desktop windows, and they can overlap each other by just focusing a window or another. Now suppose that Paint window is topmost, now it will stay on top of Photos, regardless of its focus state.
+
+![ZBID_IMMERSIVE_APPCHROME](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_IMMERSIVE_APPCHROME.png?raw=true)
+
+ZBID_IMMERSIVE_APPCHROME: this band is used by the task view (Win+Tab menu).
+
+![ZBID_IMMERSIVE_MOGO](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_IMMERSIVE_MOGO.png?raw=true)
 
 ZBID_IMMERSIVE_MOGO: this band is used by the start menu AND the taskbar (only if the start menu is open).
 
+![ZBID_IMMERSIVE_SEARCH](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_IMMERSIVE_SEARCH.png?raw=true)
+
+ZBID_IMMERSIVE_SEARCH: this band is used by the search menu and the cortana.
+
+![ZBID_IMMERSIVE_NOTIFICATIONS](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_IMMERSIVE_NOTIFICATIONS.png?raw=true)
 
 ZBID_IMMERSIVE_NOTIFICATIONS: used by the Action Center, notifications and some system flyouts (e.g. Network, Volume).
 
-ZBID_SYSTEM_TOOLS: used by Task Manager with “Always on Top” enabled, Alt-Tab view.
+![ZBID_SYSTEM_TOOLS](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_SYSTEM_TOOLS.png?raw=true)
 
-ZBID_ABOVELOCK_UX: used by “Playing Now”. This band and anything else higher will stay on top of the lock screen.
+ZBID_SYSTEM_TOOLS: used by Task Manager with "Always on Top" enabled, Alt-Tab view.
+
+![ZBID_ABOVELOCK_UX](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_ABOVELOCK_UX.png?raw=true)
+
+ZBID_ABOVELOCK_UX: used by "Playing Now". This band and anything else higher will stay on top of the lock screen.
+
+![ZBID_GENUINE_WINDOWS](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_GENUINE_WINDOWS.png?raw=true)
+
+ZBID_GENUINE_WINDOWS: used by "Activate Windows" window. This band is the highest priority band outside of ZBID_UIACCESS.
+
+![ZBID_UIACCESS](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_UIACCESS.png?raw=true)
+
+ZBID_UIACCESS: used by magnifier and on-screen keyboard. This band is typically used for assistive technology applications (UIAccess).
