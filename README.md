@@ -1,5 +1,8 @@
 # WindowTopMost
-A library that allows windows to be placed at the top in front of any window (including on-screen keyboards under Win11)
+
+A library that allows windows to be placed at the top in front of any window
+
+The earliest supported version of Windows: **Windows 8.x**
 
 - - -
 ### References
@@ -104,3 +107,161 @@ ZBID_GENUINE_WINDOWS: used by "Activate Windows" window. This band is the highes
 ![ZBID_UIACCESS](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_UIACCESS.png?raw=true)
 
 ZBID_UIACCESS: used by magnifier and on-screen keyboard. This band is typically used for assistive technology applications (UIAccess).
+
+- - -
+
+## Technical Parts
+
+### ZBID enum
+
+```cpp
+enum ZBID : DWORD {
+	ZBID_DEFAULT = 0,
+	ZBID_DESKTOP = 1,
+	ZBID_UIACCESS = 2,
+	ZBID_IMMERSIVE_IHM = 3,
+	ZBID_IMMERSIVE_NOTIFICATION = 4,
+	ZBID_IMMERSIVE_APPCHROME = 5,
+	ZBID_IMMERSIVE_MOGO = 6,
+	ZBID_IMMERSIVE_EDGY = 7,
+	ZBID_IMMERSIVE_INACTIVEMOBODY = 8,
+	ZBID_IMMERSIVE_INACTIVEDOCK = 9,
+	ZBID_IMMERSIVE_ACTIVEMOBODY = 10,
+	ZBID_IMMERSIVE_ACTIVEDOCK = 11,
+	ZBID_IMMERSIVE_BACKGROUND = 12,
+	ZBID_IMMERSIVE_SEARCH = 13,
+	ZBID_GENUINE_WINDOWS = 14,
+	ZBID_IMMERSIVE_RESTRICTED = 15,
+	ZBID_SYSTEM_TOOLS = 16,
+	ZBID_LOCK(Win 10 up) = 17,
+  ZBID_ABOVELOCK_UX(Win 10 up) = 18,
+};
+```
+
+- - -
+
+### Some private api function introduction
+
+#### CreateWindowInBand
+Private api function found in user32.dll. Since it’s not present in Windows SDK headers/libs, you have to use ```GetModuleHandle``` and ```GetProcAddress``` to get access to that function.
+
+```CreateWindowInBand``` function is the same as ```CreateWindowEx``` except it has 1 more parameter, ```dwBand```, that is where you specify the band on which the window should stay (ZBID).
+
+```cpp
+HWND WINAPI CreateWindowInBand(
+     DWORD dwExStyle,
+     LPCWSTR lpClassName,
+     LPCWSTR lpWindowName,
+     DWORD dwStyle,
+     int x,
+     int y,
+     int nWidth,
+     int nHeight,
+     HWND hWndParent,
+     HMENU hMenu,
+     HINSTANCE hInstance,
+     LPVOID lpParam,
+     DWORD dwBand
+);
+```
+
+#### CreateWindowInBandEx
+Private api function found in user32.dll.
+
+Same as ```CreateWindowInBand``` plus 1 parameter, ```dwTypeFlags``` (Unknown purpose).
+
+```cpp
+HWND WINAPI CreateWindowInBandEx(
+     DWORD dwExStyle,
+     LPCWSTR lpClassName,
+     LPCWSTR lpWindowName,
+     DWORD dwStyle,
+     int x,
+     int y,
+     int nWidth,
+     int nHeight,
+     HWND hWndParent,
+     HMENU hMenu,
+     HINSTANCE hInstance,
+     LPVOID lpParam,
+     DWORD dwBand,
+     DWORD dwTypeFlags
+);
+```
+
+#### SetWindowBand
+Private api function found in user32.dll.
+
+```SetWindowBand``` function has 3 parameters, ```hWnd```, ```hWndInserAfter``` and ```dwBand```. Same as 2 first parameters from ```SetWindowPos```. The returned value indicates success or failure. In case of failure call ```GetLastError```. Most likely, you will got a nice ```0x5``` (```ACCESS_DENIED```).
+
+```cpp
+BOOL WINAPI SetWindowBand(
+     HWND hWnd, 
+     HWND hwndInsertAfter, 
+     DWORD dwBand
+);
+```
+
+#### GetWindowBand
+Private api function found in user32.dll.
+
+```GetWindowBand``` function has 2 parameters, ```hWnd``` and ```pdwBand```. ```pdwBand``` is a pointer that receives the band (ZBID) of the HWND. The returned value indicates success or failure. In case of failure call ```GetLastError```.
+
+```cpp
+BOOL WINAPI GetWindowBand(
+     HWND hWnd, 
+     PDWORD pdwBand
+);
+```
+
+#### NtUserEnableIAMAccess
+Private api function found in user32.dll.
+
+```NtUserEnableIAMAccess``` function has 2 parameters, ```key``` and ```enable```. ```enable``` is a flag that specifies whether IAM access is enabled or not. ```key``` is the IAM access key. In case of failure call ```GetLastError```.
+
+```cpp
+BOOL WINAPI NtUserEnableIAMAccess(
+    ULONG64 key,
+    BOOL enable
+);
+```
+
+#### NtUserAcquireIAMKey
+Private api function found in user32.dll.
+
+```NtUserAcquireIAMKey``` function has only 1 parameter, ```pkey```. ```pkey``` is a pointer to ULONG64 used to receive the created IAM access key.
+
+```cpp
+BOOL WINAPI NtUserAcquireIAMKey(
+    OUT ULONG64* pkey
+);
+```
+
+- - -
+
+### Can I call these APIs?
+
+Short reply: Some yes (under certain conditions), some no.
+
+```GetWindowBand``` works in every case, you can use it without any problem.
+
+```CreateWindowInBand(Ex)``` **works ONLY if you pass ```ZBID_DEFAULT``` or ```ZBID_DESKTOP```** as ```dwBand``` argument. Also **```ZBID_UIACCESS``` is permitted only if the process has UIAccess token** (below is a detailed explanation). **Any other ZBID will fail with ```0x5``` (```ACCESS DENIED```)**.
+
+```SetWindowBand``` will **never** work, it will **always fail with ```0x5``` (```ACCESS DENIED```)**.
+
+```NtUserEnableIAMAccess``` also hardly works because you need to provide a **ULONG64 type access key**.
+
+```NtUserAcquireIAMKey``` never works **when Explorer.EXE is running**.
+
+#### Why I can’t call using other ZBIDs?
+Because Microsoft added extra checks for these bands.
+
+For ```CreateWindowInBand(Ex)```, to be able to use more ZBIDs, the program **must have** a special PE header, named **```.imrsiv```** (bss_seg), flagged with **```IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY```** and be **signed with a Microsoft certificate ```Microsoft Windows```**.
+
+For ```SetWindowBand```, we cannot directly call it, but there are other methods, which will be explained in detail below.
+
+- - -
+
+### Solution
+
+The article mentions that calling SetWindowBand **requires calling NtUserEnableIAMAccess to enable IAM access** first. But this function needs a ULONG64 type access key. 
