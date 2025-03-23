@@ -133,8 +133,8 @@ enum ZBID : DWORD {
     ZBID_GENUINE_WINDOWS = 14,
     ZBID_IMMERSIVE_RESTRICTED = 15,
     ZBID_SYSTEM_TOOLS = 16,
-    ZBID_LOCK(Win 10 up) = 17,
-    ZBID_ABOVELOCK_UX(Win 10 up) = 18,
+    ZBID_LOCK = 17, // Win 10 up
+    ZBID_ABOVELOCK_UX = 18, // Win 10 up
 };
 ```
 
@@ -272,7 +272,7 @@ How to make Explorer EXE calls ```NtUserEnabeIAMAccess```? Just call ```SetForeg
 
 I have tried using the registry to **pass IAM keys back to the program** that injected the DLL (hereinafter referred to as the "main program"). However, when the main program attempted to call ```NtUserEnableIAMAccess``` using the correct IAM key, it **obtained the result ```0x5``` (```ACCESS DENIED```)**. This indicates that it is **not advisable to call this function in ordinary applications**.
 
-I also found that **if code is written in a DLL that steals IAM keys to call ```NtUserEnableIAMAccess``` and ```SetWindowBand``` to set window Z-order band**, there will be **no errors and the operation will be successfully completed**. Perhaps due to the Explorer.EXE needs to call ```SetWindowBand``` to set the Z-order band of other windows.
+I also found that **if code is written in the DLL that steals IAM keys to call ```NtUserEnableIAMAccess``` and ```SetWindowBand``` to set window Z-order band**, there will be **no errors and the operation will be successfully completed**. Perhaps due to the Explorer.EXE needs to call ```SetWindowBand``` to set the Z-order band of other windows.
 
 Finally, I used file transfer data (hWnd, hWndInsertAfter and dwBand) and a hidden window to trigger the message to set window Z-order band.
 
