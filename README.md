@@ -265,3 +265,19 @@ For ```SetWindowBand```, we cannot directly call it, but there are other methods
 ### Solution
 
 The article mentions that calling SetWindowBand **requires calling NtUserEnableIAMAccess to enable IAM access** first. But this function needs a ULONG64 type access key. 
+
+We can **inject a DLL** (IAMKeyHacker.DLL in this example) **into Explorer EXE**, And monitor the behavior of Explorer.EXE calling **```NtUserEnableIAMAccess```**. We can respond to ```NtUserEnabeIAMAccess``` **in our own DLL** through API hook, and **steal the IAM access key given by Explorer.EXE** calling function based on calling the original function and return the correct result.
+
+How to make Explorer EXE calls ```NtUserEnabeIAMAccess```? Just call ```SetForegroundWindow``` to set the focus to the desktop window first, and then set the focus to the taskbar. I don't know why?
+
+I have tried using the registry to **pass IAM keys back to the program** that injected the DLL (hereinafter referred to as the "main program"). However, when the main program attempted to call ```NtUserEnableIAMAccess``` using the correct IAM key, it **obtained the result ```0x5``` (```ACCESS DENIED```)**. This indicates that it is **not advisable to call this function in ordinary applications**.
+
+I also found that **if code is written in a DLL that steals IAM keys to call ```NtUserEnableIAMAccess``` and ```SetWindowBand``` to set window Z-order band**, there will be **no errors and the operation will be successfully completed**. Perhaps due to the Explorer.EXE needs to call ```SetWindowBand``` to set the Z-order band of other windows.
+
+Finally, I used file transfer data (hWnd, hWndInsertAfter and dwBand) and a hidden window to trigger the message to set window Z-order band.
+
+This is all the solutions.
+
+- - -
+
+## Final Effect
