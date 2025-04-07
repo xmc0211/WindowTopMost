@@ -268,7 +268,7 @@ The article mentions that calling SetWindowBand **requires calling NtUserEnableI
 
 We can **inject a DLL** (IAMKeyHacker.DLL in this example) **into Explorer EXE**, And monitor the behavior of Explorer.EXE calling **```NtUserEnableIAMAccess```**. We can respond to ```NtUserEnabeIAMAccess``` **in our own DLL** through API hook, and **steal the IAM access key given by Explorer.EXE** calling function based on calling the original function and return the correct result.
 
-How to make Explorer EXE calls ```NtUserEnabeIAMAccess```? Just call ```SetForegroundWindow``` to set the focus to the desktop window first, and then set the focus to the taskbar. I don't know why?
+How to make Explorer.EXE calls ```NtUserEnabeIAMAccess```? Just call ```SetForegroundWindow``` to set the focus to the desktop window first, and then set the focus to the taskbar. I don't know why?
 
 I have tried using the registry to **pass IAM keys back to the program** that injected the DLL (hereinafter referred to as the "main program"). However, when the main program attempted to call ```NtUserEnableIAMAccess``` using the correct IAM key, it **obtained the result ```0x5``` (```ACCESS DENIED```)**. This indicates that it is **not advisable to call this function in ordinary applications**.
 
