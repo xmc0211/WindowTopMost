@@ -12,9 +12,9 @@ The earliest supported version of Windows: **Windows 8.x**
 
 [https://blog.adeltax.com/window-z-order-in-windows-10](https://blog.adeltax.com/window-z-order-in-windows-10)
 
-https://www.bilibili.com/video/BV1HCwwegEVp (Chinese)
+https://www.bilibili.com/video/BV1HCwwegEVp (Author: Wormwaker)
 
-https://www.bilibili.com/opus/1023826882327478276 (Chinese)
+https://www.bilibili.com/opus/1023826882327478276 (Author: Wormwaker)
 - - -
 ## Defining Window Z-order “band”
 
