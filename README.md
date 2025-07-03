@@ -1,6 +1,6 @@
 # WindowTopMost
 
-A library that allows windows to be placed at the top in front of any window
+A library that allows windows to be placed at the top in front of any window.
 
 The earliest supported version of Windows: **Windows 8.x**
 
