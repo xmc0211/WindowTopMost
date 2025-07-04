@@ -1,6 +1,6 @@
 # WindowTopMost
 
-A library that allows windows to be placed at the top in front of any window.
+A library that use the window Z-order band to place the window on top of the system windows.
 
 The earliest supported version of Windows: **Windows 8.x**
 
