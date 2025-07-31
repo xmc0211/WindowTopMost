@@ -25,7 +25,7 @@
 // 2. Need to ensure Explorer.EXE runs normally and stably when called, as it requires injecting DLL into Explorer.EXE performs operations.
 // 3. It is necessary to ensure that the application can end normally so that the injected DLL can be uninstalled. If it cannot be guaranteed, 
 //    please call the WTMUninit function after not using the library function. (Can be called multiple times)
-// 4. Do not call this library function too frequently, as the backend DLL may not be able to process messages.
+// 4. You MUST call WTMInit before calling other functions of the library.
 // You can call WTMCheckEnvironment() to verify if conditions 1 and 2 are met.
 
 #define WTMEXPORT __declspec(dllexport)
@@ -86,7 +86,7 @@ enum ZBID : DWORD {
 #ifndef WTMDLLFILE
 
 // Check if Dll has been successfully injected
-BOOL WTMIMPORT CheckForDll();
+BOOL WTMIMPORT WTMCheckForDll();
 
 // Check if the operating system meets the requirements
 BOOL WTMAPI WTMCheckEnvironment();
@@ -99,11 +99,11 @@ BOOL WTMIMPORT WTMUninit();
 
 // Obtain UIAccess permission by restarting the application
 // There is no need to manually call this function.
-BOOL WTMAPI EnableUIAccess(BOOL bEnable);
+BOOL WTMAPI WTMEnableUIAccess(BOOL bEnable);
 
 // Create the top-level window using UIAccess and verify if the Z segment is correct. If an error occurs, return NULL.
 // The application will restart.
-HWND WTMIMPORT CreateTopMostWindowW(
+HWND WTMIMPORT WTMCreateUIAccessWindowW(
 	_In_ DWORD dwExStyle,
 	_In_ LPCWSTR lpClassName,
 	_In_ LPCWSTR lpWindowName,
@@ -117,7 +117,7 @@ HWND WTMIMPORT CreateTopMostWindowW(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ LPVOID lpParam
 );
-HWND WTMIMPORT CreateTopMostWindowA(
+HWND WTMIMPORT WTMCreateUIAccessWindowA(
 	_In_ DWORD dwExStyle,
 	_In_ LPCSTR lpClassName,
 	_In_ LPCSTR lpWindowName,
@@ -132,21 +132,21 @@ HWND WTMIMPORT CreateTopMostWindowA(
 	_In_opt_ LPVOID lpParam
 );
 #ifdef UNICODE
-#define CreateTopMostWindow CreateTopMostWindowW
+#define CreateTopMostWindow WTMCreateUIAccessWindowW
 #else
-#define CreateTopMostWindow CreateTopMostWindowA
+#define CreateTopMostWindow WTMCreateUIAccessWindowA
 #endif
 
 // SetWindowBand that does not deny access.
 // It will return the actual result of SetWindowBand and set error code.
-BOOL WTMIMPORT SetWindowBandEx(
+BOOL WTMIMPORT WTMSetWindowBand(
 	_In_opt_ HWND hWnd,
 	_In_opt_ HWND hWndInsertAfter,
 	_In_opt_ DWORD dwBand
 );
 
 // CreateWindowInBand will not deny access and will return NULL if an error occurs.
-HWND WTMIMPORT CreateWindowInBandExW(
+HWND WTMIMPORT WTMCreateWindowInBandW(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCWSTR lpClassName,
 	_In_opt_ LPCWSTR lpWindowName,
@@ -161,7 +161,7 @@ HWND WTMIMPORT CreateWindowInBandExW(
 	_In_opt_ LPVOID lpParam,
 	_In_ ZBID dwBand
 );
-HWND WTMIMPORT CreateWindowInBandExA(
+HWND WTMIMPORT WTMCreateWindowInBandA(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCSTR lpClassName,
 	_In_opt_ LPCSTR lpWindowName,
@@ -177,13 +177,13 @@ HWND WTMIMPORT CreateWindowInBandExA(
 	_In_ ZBID dwBand
 );
 #ifdef UNICODE
-#define CreateWindowInBandEx CreateWindowInBandExW
+#define CreateWindowInBandEx WTMCreateWindowInBandW
 #else
-#define CreateWindowInBandEx CreateWindowInBandExA
+#define CreateWindowInBandEx WTMCreateWindowInBandA
 #endif
 
 // GetWindowBand call entrance, and if an error occurs, returns False.
-BOOL WTMIMPORT GetWindowBandEx(
+BOOL WTMIMPORT WTMGetWindowBand(
 	_In_ HWND hWnd,
 	_In_ LPDWORD pdwBand
 );
