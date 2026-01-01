@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 FileBinIO - xmc0211 <xmc0211@qq.com>
+// Copyright (c) 2025-2026 FileBinIO - xmc0211 <xmc0211@qq.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,19 +46,19 @@ LARGE_INTEGER FBGetFileSize(std::_tstring filePath) {
     LARGE_INTEGER fileSize;
     fileSize.QuadPart = 0;
 
-    // 打开文件以读取其大小
+    // 鎵撳紑鏂囦欢浠ヨ鍙栧叾澶у皬
     HANDLE hFile = CreateFile(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) return fileSize;
 
-    // 获取文件大小
+    // 鑾峰彇鏂囦欢澶у皬
     if (!GetFileSizeEx(hFile, &fileSize)) {
-        // 关闭文件句柄
+        // 鍏抽棴鏂囦欢鍙ユ焺
         CloseHandle(hFile);
         return fileSize;
     }
 
-    // 关闭文件句柄
+    // 鍏抽棴鏂囦欢鍙ユ焺
     CloseHandle(hFile);
     return fileSize;
 }
@@ -133,3 +133,4 @@ DWORD FBWriteFile(std::_tstring lpcFilePath,
     if (lpdwBytesWrite != NULL) *lpdwBytesWrite = dwBytesWrite;
     return FB_SUCCESS;
 }
+
