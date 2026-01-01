@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 FileSys - xmc0211 <xmc0211@qq.com>
+// Copyright (c) 2025-2026 FileSys - xmc0211 <xmc0211@qq.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,4 +102,5 @@ BOOL FSEnumAllDir(_In_ std::_tstring lpExistDirPath, _In_ FS_PATH_CALLBACK cbFun
 BOOL FSEnumAllFile(_In_ std::_tstring lpExistDirPath, _In_ FS_PATH_CALLBACK cbFunc, _In_opt_ LPVOID lpParam);
 
 #endif
+
 
