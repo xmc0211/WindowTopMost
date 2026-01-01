@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 Convert - xmc0211 <xmc0211@qq.com>
+// Copyright (c) 2025-2026 Convert - xmc0211 <xmc0211@qq.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -67,3 +67,4 @@ void UCH2TSTR(const UCHAR* data, TCHAR* res, size_t sz, size_t res_sz);
 void TSTR2UCH(const TCHAR* hexStr, UCHAR* data, size_t sz);
 
 #endif
+
