@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 ProcessCtrl - xmc0211 <xmc0211@qq.com>
+// Copyright (c) 2025-2026 ProcessCtrl - xmc0211 <xmc0211@qq.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +103,7 @@ BOOL EnumProc(PROC_ENUM_CALLBACK fCb, LPVOID lpParam) {
 			obj.PE = pe;
 			obj.Pid = pe.th32ProcessID;
 			obj.Name = tn;
-			// »ñÈ¡½ø³ÌµÄÍêÕûÂ·¾¶
+			// è·å–è¿›ç¨‹çš„å®Œæ•´è·¯å¾„
 			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe.th32ProcessID);
 			if (!hProcess) continue;
 			TCHAR szProcessPath[MAX_PATH] = { 0 };
@@ -125,9 +125,9 @@ BOOL EnumProc(PROC_ENUM_CALLBACK fCb, LPVOID lpParam) {
 			}
 			CloseHandle(hProcess);
 			bRet &= fCb(obj, lpParam);
-		} while (Process32Next(hProcessSnap, &pe)); // ¼ÌĞø±éÀú
+		} while (Process32Next(hProcessSnap, &pe)); // ç»§ç»­éå†
 	}
-	CloseHandle(hProcessSnap); // ¹Ø±Õ¿ìÕÕ¾ä±ú
+	CloseHandle(hProcessSnap); // å…³é—­å¿«ç…§å¥æŸ„
 	return bRet;
 }
 BOOL EnumThre(DWORD dwPid, THRE_ENUM_CALLBACK fCb, LPVOID lpParam) {
@@ -222,9 +222,9 @@ BOOL FindPE(DWORD dwPid, PROCESS* Ret) {
 				*Ret = obj;
 				break;
 			}
-		} while (Process32Next(hProcessSnap, &pe)); // ¼ÌĞø±éÀú
+		} while (Process32Next(hProcessSnap, &pe)); // ç»§ç»­éå†
 	}
-	CloseHandle(hProcessSnap); // ¹Ø±Õ¿ìÕÕ¾ä±ú
+	CloseHandle(hProcessSnap); // å…³é—­å¿«ç…§å¥æŸ„
 	return TRUE;
 }
 
@@ -257,3 +257,4 @@ BOOL CrashProc(DWORD dwPid) {
 	CloseHandle(hTh);
 	return TRUE;
 }
+
