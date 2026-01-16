@@ -28,6 +28,8 @@ For clarity, in this context the word “band” means group of Z-orders.
 
 Like ZBID_DESKTOP, other bands also can be subdivided in 2 groups: **normal and topmost window**.
 
+_Windows will not process ZBID_DEFAULT, it only indicated the default Z-Order band._
+
 The order of bands are the following, from the lowest to the highest Z-order:
 
 | ZBID Name | Value | Description |
