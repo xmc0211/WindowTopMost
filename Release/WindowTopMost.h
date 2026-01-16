@@ -31,7 +31,7 @@
 #define WTMEXPORT __declspec(dllexport)
 #define WTMIMPORT __declspec(dllimport)
 
-#ifndef WTMDLLFILE
+#ifndef __WTM_IS_COMPILING
 #define WTMAPI WTMIMPORT
 #else
 #define WTMAPI WTMEXPORT
@@ -42,7 +42,7 @@
 
 #include <Windows.h>
 
-// Windows 7 and below versions do not support the use of ZBID. If you want to place the window at the forefront, you can periodically call SetWindowPos to place it at the top.
+// Windows 7 and below versions do not support the use of Z-Order bands. If you want to place the window at the forefront, you can periodically call SetWindowPos to place it at the top.
 #if WINVER < 0x0800 || _WIN32_WINNT < 0x0800
 #error Win7 and below versions are not applicable to this library. Please consider using 'SetWindowPos'.
 #endif
@@ -51,17 +51,17 @@
 #if WINVER >= 0x0A00 || _WIN32_WINNT >= 0x0A00
 #define WIN10UP(i) i
 #else
-#define WIN10UP(i) UNUSED_ ## i
+#define WIN10UP(i) ZBID_UNUSED_ ## i
 #endif
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-// Z segments that can be used in Windows windows
+// Z-Order bands that can be used in windows
 // The default is ZBID_DESKTOP, with ZBID_UIACCESS at the top. The priority here is sorted from low to high.
 enum ZBID : DWORD {
-	ZBID_DEFAULT					 = 0,	// Default Z segment (ZBID_DESKTOP)
+	ZBID_DEFAULT					 = 0,	// Default Z-Order bands (ZBID_DESKTOP, Windows will not process this )
 	ZBID_DESKTOP					 = 1,	// Normal window
 	ZBID_IMMERSIVE_RESTRICTED		 = 15,	// ** Generally not used **
 	ZBID_IMMERSIVE_BACKGROUND		 = 12,
@@ -83,19 +83,19 @@ enum ZBID : DWORD {
 };
 
 
-#ifndef WTMDLLFILE
+#ifndef __WTM_IS_COMPILING
 
 // Check if Dll has been successfully injected
-BOOL WTMIMPORT WTMCheckForDll();
+BOOL WTMAPI WTMCheckForDll();
 
 // Check if the operating system meets the requirements
 BOOL WTMAPI WTMCheckEnvironment();
 
 // WindowTopMost initialization function. You must call it in your program.
-BOOL WTMIMPORT WTMInit();
+BOOL WTMAPI WTMInit();
 
 // WindowTopMost uninstallation function. You must call it in your program. 
-BOOL WTMIMPORT WTMUninit();
+BOOL WTMAPI WTMUninit();
 
 // Obtain UIAccess permission by restarting the application
 // There is no need to manually call this function.
@@ -103,7 +103,7 @@ BOOL WTMAPI WTMEnableUIAccess(BOOL bEnable);
 
 // Create the top-level window using UIAccess and verify if the Z segment is correct. If an error occurs, return NULL.
 // The application will restart.
-HWND WTMIMPORT WTMCreateUIAccessWindowW(
+HWND WTMAPI WTMCreateUIAccessWindowW(
 	_In_ DWORD dwExStyle,
 	_In_ LPCWSTR lpClassName,
 	_In_ LPCWSTR lpWindowName,
@@ -117,7 +117,7 @@ HWND WTMIMPORT WTMCreateUIAccessWindowW(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ LPVOID lpParam
 );
-HWND WTMIMPORT WTMCreateUIAccessWindowA(
+HWND WTMAPI WTMCreateUIAccessWindowA(
 	_In_ DWORD dwExStyle,
 	_In_ LPCSTR lpClassName,
 	_In_ LPCSTR lpWindowName,
@@ -139,14 +139,14 @@ HWND WTMIMPORT WTMCreateUIAccessWindowA(
 
 // SetWindowBand that does not deny access.
 // It will return the actual result of SetWindowBand and set error code.
-BOOL WTMIMPORT WTMSetWindowBand(
+BOOL WTMAPI WTMSetWindowBand(
 	_In_opt_ HWND hWnd,
 	_In_opt_ HWND hWndInsertAfter,
 	_In_opt_ DWORD dwBand
 );
 
 // CreateWindowInBand will not deny access and will return NULL if an error occurs.
-HWND WTMIMPORT WTMCreateWindowInBandW(
+HWND WTMAPI WTMCreateWindowInBandW(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCWSTR lpClassName,
 	_In_opt_ LPCWSTR lpWindowName,
@@ -161,7 +161,7 @@ HWND WTMIMPORT WTMCreateWindowInBandW(
 	_In_opt_ LPVOID lpParam,
 	_In_ ZBID dwBand
 );
-HWND WTMIMPORT WTMCreateWindowInBandA(
+HWND WTMAPI WTMCreateWindowInBandA(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCSTR lpClassName,
 	_In_opt_ LPCSTR lpWindowName,
@@ -183,7 +183,7 @@ HWND WTMIMPORT WTMCreateWindowInBandA(
 #endif
 
 // GetWindowBand call entrance, and if an error occurs, returns False.
-BOOL WTMIMPORT WTMGetWindowBand(
+BOOL WTMAPI WTMGetWindowBand(
 	_In_ HWND hWnd,
 	_In_ LPDWORD pdwBand
 );
@@ -195,4 +195,3 @@ BOOL WTMIMPORT WTMGetWindowBand(
 #endif
 
 #endif
-

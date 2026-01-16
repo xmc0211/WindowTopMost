@@ -244,4 +244,3 @@ INT TaskDialogEx(std::_tstring MainInstruction, std::_tstring Content, TASKDIALO
 
 #endif
 
-

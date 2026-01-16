@@ -24,7 +24,7 @@
 #include <windows.h>
 #include <string>
 #include <iostream>
-#include "WindowTopMost.h"
+#include "../Common Headers/WindowTopMost.h"
 #include "TaskDialogEx.h"
 using namespace std;
 
@@ -298,6 +298,7 @@ Press any key to return...)";
 	return;
 }
 
+
 int UserInputMain() {
 	WTMInit();
 	DWORD Result = 0;
@@ -435,5 +436,4 @@ Press any key to exit...)";
 	ReleaseMutex(hMutex);
 	CloseHandle(hMutex);
 	return Result;
-
 }

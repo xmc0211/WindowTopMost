@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="mhook-lib\mhook.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -36,6 +33,12 @@
     <ClInclude Include="disasm-lib\misc.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="IAMKeyBlock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common Headers\Framework.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -51,6 +54,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="disasm-lib\disasm_x86.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="IAMKeyBlock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

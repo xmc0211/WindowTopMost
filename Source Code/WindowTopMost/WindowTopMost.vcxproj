@@ -143,22 +143,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common Headers\Framework.h" />
+    <ClInclude Include="..\Common Headers\WindowTopMost.h" />
     <ClInclude Include="Convert.h" />
-    <ClInclude Include="FileBinIO.h" />
-    <ClInclude Include="FileSys.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="ProcessCtrl.h" />
-    <ClInclude Include="TaskDialogEx.h" />
     <ClInclude Include="uiaccess.h" />
-    <ClInclude Include="WindowTopMost.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="FileBinIO.cpp" />
-    <ClCompile Include="FileSys.cpp" />
-    <ClCompile Include="ProcessCtrl.cpp" />
-    <ClCompile Include="TaskDialogEx.cpp" />
     <ClCompile Include="uiaccess.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

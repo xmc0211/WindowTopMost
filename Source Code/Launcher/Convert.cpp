@@ -21,8 +21,13 @@
 // SOFTWARE.
 
 #include "Convert.h"
+#include <iomanip>
+#include <assert.h>
 
-// std::string and std::wstring interconversion
+// Base64 Chars
+const std::string _BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+// std::_tstring and std::wstring interconversion
 std::wstring LPC2LPW(const std::string str) {
 	INT size = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, nullptr, 0);
 	if (size == 0) return L"";
@@ -45,7 +50,8 @@ std::string LPW2LPC(const std::wstring wstr) {
 }
 
 // strlen for UCHAR*
-size_t ustrlen(const UCHAR* str) {
+size_t ustrlen(LPCUSTR str) {
+	assert(str != NULL);
 	size_t length = 0;
 	while (*str != 0) {
 		++length;
@@ -55,13 +61,17 @@ size_t ustrlen(const UCHAR* str) {
 }
 
 // char* and unsigned char* interconversion
-void CH2UCH(const char* str, UCHAR* res, size_t sz) {
+void CH2UCH(LPCSTR str, LPUSTR res, size_t sz, size_t res_sz) {
+	assert(sz <= res_sz);
+	assert(str != NULL && res != NULL);
 	for (size_t i = 0; i < sz + 1; i++) {
 		res[i] = static_cast<UCHAR>(str[i]);
 	}
 	return;
 }
-void UCH2CH(const UCHAR* str, char* res, size_t sz) {
+void UCH2CH(LPCUSTR str, LPSTR res, size_t sz, size_t res_sz) {
+	assert(sz <= res_sz);
+	assert(str != NULL && res != NULL);
 	for (size_t i = 0; i < sz + 1; i++) {
 		res[i] = static_cast<CHAR>(str[i]);
 	}
@@ -88,18 +98,113 @@ ULONG TSTR2UL(const std::_tstring str) {
 	return ans;
 }
 
-// UCHAR* and hexadecimal string conversion
-void UCH2TSTR(const UCHAR* data, TCHAR* res, size_t sz, size_t res_sz) {
+// Character encoding conversion
+BOOL ConvertCodePage(LPCSTR str, LPSTR res, size_t sz, size_t res_sz, UINT SourceCodePage, UINT TargetCodePage) {
+	assert(str != NULL && res != NULL);
+
+    // Step 1: SourceCodePage -> UTF-16
+    int UTF16_Count = MultiByteToWideChar(
+        SourceCodePage,
+        0,
+        str,
+        (int)sz,
+        nullptr,
+        0
+    );
+    if (UTF16_Count <= 0) return FALSE;
+
+    std::vector<WCHAR> UTF16Buffer(UTF16_Count + 1);
+	if (!MultiByteToWideChar(
+		SourceCodePage,
+		0,
+		str,
+		(int)sz,
+		UTF16Buffer.data(),
+		UTF16_Count
+	)) return FALSE;
+
+    // Step 2: UTF-16 -> TargetCodePage
+    int Target_Count = WideCharToMultiByte(
+        TargetCodePage,
+        0,
+        UTF16Buffer.data(),
+        UTF16_Count,
+        nullptr,
+        0,
+        nullptr,
+        nullptr
+    );
+	if (Target_Count <= 0) return FALSE;
+
+    std::vector<CHAR> Result(Target_Count + 1);
+	if (!WideCharToMultiByte(
+		TargetCodePage,
+		0,
+		UTF16Buffer.data(),
+		UTF16_Count,
+		Result.data(),
+		Target_Count,
+		nullptr,
+		nullptr
+	)) return FALSE;
+
+	strcpy_s(res, res_sz, Result.data());
+	return TRUE;
+}
+
+// UCHAR* and hexadecimal _tstring conversion
+void UCH2TSTR(LPCUSTR data, LPTSTR res, size_t sz, size_t res_sz) {
+	assert(sz * 2 <= res_sz);
+	assert(data != NULL && res != NULL);
 	for (size_t i = 0; i < sz; i++) {
 		_sntprintf_s(res + i * 2, res_sz - i * 2, _TRUNCATE, TEXT("%02x"), data[i]);
 	}
 	return;
 }
-void TSTR2UCH(const TCHAR* hexStr, UCHAR* data, size_t sz) {
+void TSTR2UCH(LPCTSTR data, LPUSTR res, size_t sz, size_t res_sz) {
+	assert(sz <= res_sz * 2);
+	assert(data != NULL && res != NULL);
 	for (size_t i = 0; i < sz * 2; i += 2) {
-		TCHAR byteStr[] = {hexStr[i], hexStr[i + 1], TCHAR('\0')};
-		data[i / 2] = (UCHAR)_tcstol(byteStr, NULL, 16);
+		TCHAR byteStr[] = {data[i], data[i + 1], TCHAR('\0')};
+		res[i / 2] = (UCHAR)_tcstol(byteStr, NULL, 16);
 	}
     return;
 }
 
+// Base64 encode and decode
+std::_tstring Base64Encode(std::string String) {
+	std::string Result;
+	int Value = 0;
+	int ValueBits = -6;
+	for (unsigned char it : String) {
+		Value = (Value << 8) + it;
+		ValueBits += 8;
+		while (ValueBits >= 0) {
+			Result.push_back(_BASE64_CHARS[(Value >> ValueBits) & 0x3F]);
+			ValueBits -= 6;
+		}
+	}
+	if (ValueBits > -6) {
+		Result.push_back(_BASE64_CHARS[((Value << 8) >> (ValueBits + 8)) & 0x3F]);
+	}
+	while (Result.size() % 4) {
+		Result.push_back('=');
+	}
+	return LPC2LPT(Result);
+}
+std::string Base64Decode(std::_tstring String) {
+	std::string Result;
+	std::vector<int> Buffer(256, -1);
+	for (int i = 0; i < 64; i++) Buffer[_BASE64_CHARS[i]] = i;
+	int Value = 0, ValueBits = -8;
+	for (unsigned char it : LPT2LPC(String)) {
+		if (Buffer[it] == -1) break;
+		Value = (Value << 6) + Buffer[it];
+		ValueBits += 6;
+		if (ValueBits >= 0) {
+			Result.push_back(char((Value >> ValueBits) & 0xFF));
+			ValueBits -= 8;
+		}
+	}
+	return Result;
+}

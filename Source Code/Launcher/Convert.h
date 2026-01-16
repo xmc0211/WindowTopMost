@@ -25,9 +25,8 @@
 
 #include <windows.h>
 #include <string>
-#include <vector>
-#include <iomanip>
 #include <tchar.h>
+#include <vector>
 
 #if defined(UNICODE)
 #define _tstring wstring
@@ -35,7 +34,10 @@
 #define _tstring string
 #endif
 
-// std::string and std::wstring interconversion
+// Code Pages
+#define CP_GB2312 (936)
+
+// std::_tstring and std::wstring interconversion
 std::wstring LPC2LPW(const std::string str);
 std::string LPW2LPC(const std::wstring wstr);
 
@@ -51,20 +53,29 @@ std::string LPW2LPC(const std::wstring wstr);
 #define LPC2LPT(str) (str)
 #endif
 
+typedef UCHAR* LPUSTR;
+typedef const UCHAR* LPCUSTR;
+
 // strlen for UCHAR*
-size_t ustrlen(const UCHAR* str);
+size_t ustrlen(LPCUSTR str);
 
 // char* and unsigned char* interconversion
-void CH2UCH(const char* str, UCHAR* res, size_t sz);
-void UCH2CH(const UCHAR* str, char* res, size_t sz);
+void CH2UCH(LPCSTR str, LPUSTR res, size_t sz, size_t res_sz);
+void UCH2CH(LPCUSTR str, LPSTR res, size_t sz, size_t res_sz);
 
 // ULONG and std::_tstring interconversion
 std::_tstring UL2TSTR(const ULONG res);
 ULONG TSTR2UL(const std::_tstring str);
 
-// UCHAR* and hexadecimal string conversion
-void UCH2TSTR(const UCHAR* data, TCHAR* res, size_t sz, size_t res_sz);
-void TSTR2UCH(const TCHAR* hexStr, UCHAR* data, size_t sz);
+// String code page conversion
+BOOL ConvertCodePage(LPCSTR str, LPSTR res, size_t sz, size_t res_sz, UINT SourceCodePage, UINT TargetCodePage);
+
+// UCHAR* and hexadecimal _tstring conversion
+void UCH2TSTR(LPCUSTR data, LPTSTR res, size_t sz, size_t res_sz);
+void TSTR2UCH(LPCTSTR hexStr, LPUSTR data, size_t sz, size_t res_sz);
+
+// Base64 encode and decode
+std::_tstring Base64Encode(std::string String);
+std::string Base64Decode(std::_tstring String);
 
 #endif
-

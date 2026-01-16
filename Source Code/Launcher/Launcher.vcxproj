@@ -127,8 +127,7 @@
       <UACUIAccess>false</UACUIAccess>
     </Link>
     <PreBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)WindowTopMost\WindowTopMost.h" "$(ProjectDir)WindowTopMost.h"
-Copy /Y "$(SolutionDir)x64\Debug\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.lib"</Command>
+      <Command>Copy /Y "$(SolutionDir)x64\Debug\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.lib"</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>DEL "$(ProjectDir)WindowTopMost.lib"</Command>
@@ -153,21 +152,20 @@ Copy /Y "$(SolutionDir)x64\Debug\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.
       <UACUIAccess>false</UACUIAccess>
     </Link>
     <PreBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)WindowTopMost\WindowTopMost.h" "$(ProjectDir)WindowTopMost.h"
-Copy /Y "$(SolutionDir)x64\Release\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.lib"</Command>
+      <Command>Copy /Y "$(SolutionDir)x64\Release\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.lib"</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>DEL "$(ProjectDir)WindowTopMost.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common Headers\WindowTopMost.h" />
     <ClInclude Include="Convert.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Launcher.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TaskDialogEx.h" />
-    <ClInclude Include="WindowTopMost.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />

@@ -15,28 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowTopMost.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="uiaccess.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Convert.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="TaskDialogEx.h">
+    <ClInclude Include="..\Common Headers\Framework.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ProcessCtrl.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="FileSys.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="FileBinIO.h">
+    <ClInclude Include="..\Common Headers\WindowTopMost.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -48,18 +36,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Convert.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TaskDialogEx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ProcessCtrl.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="FileSys.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="FileBinIO.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

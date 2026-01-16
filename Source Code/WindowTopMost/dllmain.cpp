@@ -20,126 +20,79 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define WTMDLLFILE
-#include "WindowTopMost.h"
+#define __WTM_IS_COMPILING
+
+#include "../Common Headers/Framework.h"
+#include "../Common Headers/WindowTopMost.h"
 #include <TlHelp32.h>
 #include <Windows.h>
 #include <VersionHelpers.h>
 #include <ShlObj.h>
 #include "uiaccess.h"
-#include "TaskDialogEx.h"
 #include "Convert.h"
-#include "ProcessCtrl.h"
-#include "FileSys.h"
-#include "FileBinIO.h"
-
-#ifdef _DEBUG
-#include <fstream>
-#endif
-
-// File name, window class, and corresponding message for transmitting information
-#define WND_COLLECTOR_CLASSNAME       TEXT("IAMCollector_7DD48162_2BC7_4073_9CC8_51CC3DB0FF72")
-#define WND_HANDLER_CLASSNAME         TEXT("IAMHandler_D06B7428_73FA_4967_B30C_96030ACCF998")
-#define WM_PERFORM          (WM_USER + 1)
-#define WM_HANDLERHELLO     (WM_USER + 2)
-#define WM_COLLECTORHELLO   (WM_USER + 3)
-#define WM_COLLECTORSTART   (WM_USER + 4)
-#define WM_RESULT           (WM_USER + 5)
-#define COLLECTOR_TIMEOUT   (2000)
 
 // DLL injection object name
 #define COLLECTORIMAGE TEXT("IAMKeyHacker.dll")
-
-// Debug
-#ifdef _DEBUG
-#define DEBUGLOG(Text) do { std::ofstream Log("D:\\DebugLog_WTM.txt", std::ios::app); Log << Text << std::endl; } while (0)
-#define DEBUGERR(Text) DEBUGLOG(Text + (", " + std::to_string((ULONG)GetLastError())))
-#else
-#define DEBUGLOG(Text) do {  } while (0)
-#define DEBUGERR(Text) DEBUGLOG(Text)
-#endif
-
-// Prototype of each function
-typedef BOOL(WINAPI* GetWindowBand)(
-	HWND hWnd,
-	LPDWORD pdwBand
-	);
-typedef HWND(WINAPI* CreateWindowInBand)(
-	DWORD dwExStyle,
-	LPCWSTR lpClassName,
-	LPCWSTR lpWindowName,
-	DWORD dwStyle,
-	int X,
-	int Y,
-	int nWidth,
-	int nHeight,
-	HWND hWndParent,
-	HMENU hMenu,
-	HINSTANCE hInstance,
-	LPVOID lpParam,
-	DWORD dwBand
-	);
-typedef BOOL(WINAPI* SetWindowBand)(
-	HWND hWnd, 
-	HWND hWndInsertAfter,
-	DWORD dwBand
-	);
-typedef BOOL(WINAPI* NtUserEnableIAMAccess)(
-    ULONG64 key,
-    BOOL enable
-    );
-
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-// The structure of IAMCollector request and response
-struct IAMCollectorRequest {
+// Handler Window Information
+struct tag_IAMHandlerWindow {
     HWND hWnd;
-    HWND hWndInsertAfter;
-    DWORD dwBand;
-};
-struct IAMCollectorResponse {
-    BOOL bCollected;
-    BOOL bStatus;
-    DWORD dwErrorCode;
-};
+    BOOL bIsReady;
+    IAMCollectorResponse Response;
+    BOOL bThreadStopped;
+    HANDLE hWindowLoopThread;
 
-namespace IAMHandlerWindow {
-    HWND hWnd = NULL;
-    BOOL bIsCollectorReady = FALSE;
-    IAMCollectorResponse Response = { 0 };
-    BOOL bThreadStopped = FALSE;
-    HANDLE hWindowLoopThread = NULL;
+    tag_IAMHandlerWindow() : hWnd(NULL), bIsReady(FALSE), Response(), bThreadStopped(FALSE), hWindowLoopThread(NULL) {}
     void Reset() {
         hWnd = NULL;
-        bIsCollectorReady = FALSE;
-        Response = { 0 };
+        bIsReady = FALSE;
+        Response = IAMCollectorResponse();
         bThreadStopped = FALSE;
         hWindowLoopThread = NULL;
     }
-}
+} IAMHandlerWindow;
 
-BOOL WTMAPI WTMCheckForDll();
+// Auxiliary function used to check if the COLLECTORIMAGE backend program has been injected
+BOOL WTMAPI WTMCheckForDll() {
+    MODULEENTRY32 MOD{ 0 };
+    BOOL bFound = FALSE;
+    DWORD dwPid = 0;
 
-// Use WM_COPYDATA to transmit message above WM_USER avoid permission issues (Hide)
-BOOL __WTMSendMessageEx(HWND hWnd, HWND hSourceWnd, UINT message) {
-    COPYDATASTRUCT TempMessage;
-    TempMessage.dwData = message;
-    TempMessage.lpData = NULL;
-    TempMessage.cbData = 0;
-    LRESULT bRes = SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSourceWnd, (LPARAM)&TempMessage);
-    if (bRes != ERROR_SUCCESS) DEBUGERR("Communication: SendMessage error");
-    return bRes == ERROR_SUCCESS;
+    // Get the Explorer responsible for the desktop EXE's PID
+    HWND hWndTaskBar = FindWindow(TEXT("Shell_TrayWnd"), NULL);
+    if (hWndTaskBar == NULL) return FALSE;
+    GetWindowThreadProcessId(hWndTaskBar, &dwPid);
+    if (dwPid == 0) return FALSE;
+
+    // Retrieve all loaded DLLs and compare them one by one
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwPid);
+    if (hSnapshot == INVALID_HANDLE_VALUE) return FALSE;
+
+    MOD.dwSize = sizeof(MODULEENTRY32);
+    if (!Module32First(hSnapshot, &MOD)) {
+        CloseHandle(hSnapshot);
+        return FALSE;
+    }
+    do {
+        if (_tcscmp(MOD.szModule, COLLECTORIMAGE) == 0) {
+            bFound = TRUE;
+            break;
+        }
+    } while (Module32Next(hSnapshot, &MOD));
+    CloseHandle(hSnapshot);
+    return bFound;
 }
 
 // Unload COLLECTORIMAGE
-BOOL __WTMUnloadCollector() {
+BOOL WTMUnloadCollector() {
     // If already unloaded, do not unload again
     if (!WTMCheckForDll()) return TRUE;
 
-    MODULEENTRY32 MOD;
+    MODULEENTRY32 MOD{ 0 };
     BOOL bFound = FALSE;
     DWORD dwPid = 0;
 
@@ -201,66 +154,23 @@ BOOL __WTMUnloadCollector() {
     return TRUE;
 }
 
-// Adjust process privilage (Hide)
-DWORD WINAPI __WTMAdjustPrivilege(_In_ LPCTSTR lpPrivilegeName, _In_opt_ BOOL bEnable) {
-    DEBUGLOG("Enter: __WTMAdjustPrivilege");
-
-    HANDLE hToken = NULL;
-    TOKEN_PRIVILEGES NewState;
-    LUID luidPrivilegeLUID;
-    DWORD dwErr = ERROR_SUCCESS;
-    HANDLE hProcess = GetCurrentProcess();
-    if (hProcess == NULL) {
-        dwErr = GetLastError();
-        goto EXIT;
-    }
-    if (!OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
-        dwErr = GetLastError();
-        goto EXIT;
-    }
-    if (bEnable == FALSE) {
-        if (!AdjustTokenPrivileges(hToken, TRUE, NULL, 0, NULL, NULL)) dwErr = GetLastError();
-        goto EXIT;
-    }
-    LookupPrivilegeValue(NULL, lpPrivilegeName, &luidPrivilegeLUID);
-    NewState.PrivilegeCount = 1;
-    NewState.Privileges[0].Luid = luidPrivilegeLUID;
-    NewState.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if (!AdjustTokenPrivileges(hToken, FALSE, &NewState, 0, NULL, NULL)) dwErr = GetLastError();
-EXIT:
-    if (hToken) CloseHandle(hToken);
-    if (dwErr == ERROR_SUCCESS) {
-        DEBUGLOG("Successful Exit: __WTMAdjustPrivilege");
-    }
-    else {
-        DEBUGERR("Failture Exit: __WTMAdjustPrivilege");
-    }
-    return dwErr;
-}
-
 // Message handler window message processing function
-LRESULT CALLBACK __WTMHandlerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WTMHandlerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_COPYDATA: {
         PCOPYDATASTRUCT pResponseDataInfo = (PCOPYDATASTRUCT)lParam;
-        if (pResponseDataInfo->dwData == WM_RESULT) {
+        if (pResponseDataInfo->dwData == WM_IAM_OPERATION_RESPONSE) {
             // Get response data
-            DEBUGLOG("Enter Message: WM_RESULT");
+            DEBUGLOG("Enter Message: WM_IAM_OPERATION_RESPONSE");
 
-            if (pResponseDataInfo->cbData != sizeof(IAMCollectorResponse)) {
-                DEBUGLOG("Handler: Response size is incorrect");
-                return 1;
-            }
             IAMCollectorResponse* pRequestData = reinterpret_cast<IAMCollectorResponse*>(pResponseDataInfo->lpData);
-            DEBUGLOG("Handler: bStatus=" + std::to_string((ULONG64)pRequestData->bStatus));
-            DEBUGLOG("Handler: dwErrorCode=" + std::to_string((ULONG64)pRequestData->dwErrorCode));
-            IAMHandlerWindow::Response = *pRequestData;
-            IAMHandlerWindow::Response.bCollected = TRUE;
+            memcpy(&IAMHandlerWindow.Response, pRequestData, sizeof(IAMCollectorResponse));
+            IAMHandlerWindow.Response.bCollected = TRUE;
 
-            DEBUGLOG("Exit Message: WM_RESULT");
+            DEBUGLOG("Exit Message: WM_IAM_OPERATION_RESPONSE");
         }
-        if (pResponseDataInfo->dwData == WM_COLLECTORHELLO) {
-            IAMHandlerWindow::bIsCollectorReady = TRUE;
+        if (pResponseDataInfo->dwData == WM_HANDLERHELLO) {
+            IAMHandlerWindow.bIsReady = TRUE;
         }
         break;
     }
@@ -278,15 +188,15 @@ LRESULT CALLBACK __WTMHandlerWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 }
 
 // A hidden window will be created within the function to receive messages.
-DWORD CALLBACK __WTMHandlerWindowThread(LPVOID lpParam) {
-    DEBUGLOG("Enter: __WTMHandlerWindowThread");
+DWORD CALLBACK WTMHandlerWindowThread(LPVOID lpParam) {
+    DEBUGLOG("Enter: WTMHandlerWindowThread");
 
     // Register Window Class
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
     WNDCLASSEX wcex = { 0 };
     wcex.cbSize = sizeof(WNDCLASSEX);
     wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = __WTMHandlerWndProc;
+    wcex.lpfnWndProc = WTMHandlerWndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
@@ -298,13 +208,13 @@ DWORD CALLBACK __WTMHandlerWindowThread(LPVOID lpParam) {
     wcex.hIconSm = LoadIcon(wcex.hInstance, IDI_APPLICATION);
     if (!RegisterClassEx(&wcex)) {
         DEBUGERR("Window Creater: Window class register error");
-        IAMHandlerWindow::bThreadStopped = TRUE;
-        DEBUGLOG("Failure Exit: __WTMHandlerWindowThread");
+        IAMHandlerWindow.bThreadStopped = TRUE;
+        DEBUGLOG("Failure Exit: WTMHandlerWindowThread");
         return 0;
     }
 
-    // Window initialization, but not displayed
-    IAMHandlerWindow::hWnd = CreateWindowEx(
+    // Window initialization, but not display
+    IAMHandlerWindow.hWnd = CreateWindowEx(
         NULL,
         WND_HANDLER_CLASSNAME,
         TEXT(""),
@@ -315,24 +225,27 @@ DWORD CALLBACK __WTMHandlerWindowThread(LPVOID lpParam) {
         hInstance,
         nullptr
     );
-    if (!IAMHandlerWindow::hWnd) {
+    if (!IAMHandlerWindow.hWnd) {
         DEBUGERR("Window Creater: Window create error");
         UnregisterClass(WND_HANDLER_CLASSNAME, hInstance);
-        IAMHandlerWindow::bThreadStopped = TRUE;
-        DEBUGLOG("Failure Exit: __WTMHandlerWindowThread");
+        IAMHandlerWindow.bThreadStopped = TRUE;
+        DEBUGLOG("Failure Exit: WTMHandlerWindowThread");
         return 0;
     }
+
+    // Reduce permissions to accept WM_COPYDATA
     if (IsUserAnAdmin()) {
-        BOOL bRes = ChangeWindowMessageFilterEx(IAMHandlerWindow::hWnd, WM_COPYDATA, MSGFLT_ADD, NULL); // Reduce permissions to accept WM_COPYDATA
+        BOOL bRes = ChangeWindowMessageFilterEx(IAMHandlerWindow.hWnd, WM_COPYDATA, MSGFLT_ADD, NULL); // Reduce permissions to accept WM_COPYDATA
         if (!bRes) {
             DEBUGERR("Window Creater: ChangeWindowMessageFilterEx error");
             UnregisterClass(WND_HANDLER_CLASSNAME, hInstance);
-            IAMHandlerWindow::bThreadStopped = TRUE;
-            DEBUGLOG("Failure Exit: __WTMHandlerWindowThread");
+            IAMHandlerWindow.bThreadStopped = TRUE;
+            DEBUGLOG("Failure Exit: WTMHandlerWindowThread");
             return 0;
         }
     }
-    UpdateWindow(IAMHandlerWindow::hWnd);
+
+    UpdateWindow(IAMHandlerWindow.hWnd);
 
     // Main message loop
     DEBUGLOG("Window Creater: Window created successfully. Enter main loop. ");
@@ -342,41 +255,11 @@ DWORD CALLBACK __WTMHandlerWindowThread(LPVOID lpParam) {
         DispatchMessage(&msg);
     }
 
+    // Cleanup
     UnregisterClass(WND_HANDLER_CLASSNAME, hInstance);
-    IAMHandlerWindow::bThreadStopped = TRUE;
+    IAMHandlerWindow.bThreadStopped = TRUE;
     DEBUGLOG("Successful Exit: CheckSetWindowBandCallThread");
     return 0;
-}
-
-// Auxiliary function used to check if the COLLECTORIMAGE backend program has been injected
-BOOL WTMAPI WTMCheckForDll() {
-    MODULEENTRY32 MOD;
-    BOOL bFound = FALSE;
-    DWORD dwPid = 0;
-
-    // Get the Explorer responsible for the desktop EXE's PID
-    HWND hWndTaskBar = FindWindow(TEXT("Shell_TrayWnd"), NULL);
-    if (hWndTaskBar == NULL) return FALSE;
-    GetWindowThreadProcessId(hWndTaskBar, &dwPid);
-    if (dwPid == 0) return FALSE;
-
-    // Retrieve all loaded DLLs and compare them one by one
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwPid);
-    if (hSnapshot == INVALID_HANDLE_VALUE) return FALSE;
-    
-    MOD.dwSize = sizeof(MODULEENTRY32);
-    if (!Module32First(hSnapshot, &MOD)) {
-        CloseHandle(hSnapshot);
-        return FALSE;
-    }
-    do {
-        if (_tcscmp(MOD.szModule, COLLECTORIMAGE) == 0) {
-            bFound = TRUE;
-            break;
-        }
-    } while (Module32Next(hSnapshot, &MOD));
-    CloseHandle(hSnapshot);
-    return bFound;
 }
 
 // Check if the operating system meets the requirements
@@ -392,9 +275,19 @@ BOOL WTMAPI WTMCheckEnvironment() {
     DEBUGLOG("Check: Windows version OK. (VER >= 8)");
 
     // Check the dll
-    std::_tstring AppPath = FSFormat(TEXT("DP"), FSGetCurrentFilePath());
-    if (!FSObjectExist(AppPath + COLLECTORIMAGE)) {
-        DEBUGLOG("Check: DLL not exist.");
+
+    // Get the current directory
+    TCHAR Buffer[MAX_PATH];
+    GetModuleFileName(NULL, Buffer, MAX_PATH);
+    std::_tstring AppPath(Buffer);
+    size_t DrivePoint = AppPath.find_first_of(':');
+    if (DrivePoint == std::_tstring::npos) return FALSE;
+    size_t PathPoint = AppPath.find_last_of('\\');
+    if (PathPoint == std::_tstring::npos) return FALSE;
+    AppPath = AppPath.substr(0, DrivePoint + 1) + AppPath.substr(DrivePoint + 1, PathPoint - DrivePoint);
+
+    if (GetFileAttributes((AppPath + COLLECTORIMAGE).c_str()) == INVALID_FILE_ATTRIBUTES) {
+        DEBUGLOG("Check: DLL not exist or it contains error.");
         DEBUGLOG("Failure Exit: WTMCheckEnvironment");
         return FALSE;
     }
@@ -417,25 +310,22 @@ BOOL WTMAPI WTMCheckEnvironment() {
 BOOL WTMAPI WTMInit() {
     DEBUGLOG("Enter: WTMInit");
 
+    
+
     // Inject COLLECTORIMAGE to Explorer EXE to start the backend program
     
     // If already injected, uninstall and inject again
     if (WTMCheckForDll()) {
         DEBUGLOG("Injector: Collector image is already injected. Inject again.");
-        if (!__WTMUnloadCollector()) {
+        if (!WTMUnloadCollector()) {
             DEBUGERR("Injector: Can not unload collector");
+            DEBUGLOG("Failure Exit: WTMInit");
             return FALSE;
         }
     }
 
     // Check the environment
     if (!WTMCheckEnvironment()) {
-        DEBUGLOG("Failure Exit: WTMInit");
-        return FALSE;
-    }
-
-    // Elevation
-    if (__WTMAdjustPrivilege(SE_DEBUG_NAME, TRUE) != ERROR_SUCCESS) {
         DEBUGLOG("Failure Exit: WTMInit");
         return FALSE;
     }
@@ -452,7 +342,11 @@ BOOL WTMAPI WTMInit() {
     DWORD processId;
     HWND hWndTaskBar;
     hWndTaskBar = FindWindow(TEXT("Shell_TrayWnd"), NULL);
-    if (hWndTaskBar == NULL) return FALSE;
+    if (hWndTaskBar == NULL) {
+        DEBUGERR("Injector: Taskbar not found");
+        DEBUGLOG("Failure Exit: WTMInit");
+        return FALSE;
+    }
     GetWindowThreadProcessId(hWndTaskBar, &processId);
     if (processId == 0) return FALSE;
     DEBUGLOG("Injector: Explorer.EXE Pid=" + std::to_string((ULONG)processId));
@@ -508,14 +402,14 @@ BOOL WTMAPI WTMInit() {
     if (!WTMCheckForDll()) return FALSE;
 
     // Create handler window and wait (use mutex)
-    IAMHandlerWindow::hWindowLoopThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)__WTMHandlerWindowThread, NULL, NULL, 0);
-    if (!IAMHandlerWindow::hWindowLoopThread) {
+    IAMHandlerWindow.hWindowLoopThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)WTMHandlerWindowThread, NULL, NULL, 0);
+    if (!IAMHandlerWindow.hWindowLoopThread) {
         DEBUGERR("Communication: Can not create handler window");
         DEBUGLOG("Failure Exit: WTMInit");
         return FALSE;
     }
     DEBUGLOG("Communication: Wait for window create");
-    while (!IAMHandlerWindow::hWnd) {
+    while (!IAMHandlerWindow.hWnd) {
         Sleep(50);
     }
     DEBUGLOG("Communication: Window created");
@@ -538,12 +432,21 @@ BOOL WTMAPI WTMInit() {
 
     // 1. Handler hello
     DEBUGLOG("Communication: --> Handler hello");
-    __WTMSendMessageEx(hCollectorWnd, IAMHandlerWindow::hWnd, WM_HANDLERHELLO);
+    COPYDATASTRUCT TempMessage{ 0 };
+    TempMessage.dwData = WM_COLLECTORHELLO;
+    TempMessage.lpData = NULL;
+    TempMessage.cbData = 0;
+    LRESULT bRes = SendMessage(hCollectorWnd, WM_COPYDATA, (WPARAM)IAMHandlerWindow.hWnd, (LPARAM)&TempMessage);
+    if (bRes != ERROR_SUCCESS) {
+        DEBUGERR("Communication: Can not send WM_COLLECTORHELLO message");
+        DEBUGLOG("Failure Exit: WTMInit");
+        return FALSE;
+    }
 
     // 2. Collector hello (wait for flag bCollectorResponsed)
     DEBUGLOG("Communication: <-- Collector hello waiting");
     for (nTime = 0, bIsReady = FALSE; !bIsReady && nTime <= COLLECTOR_TIMEOUT; nTime += 50) {
-        if (IAMHandlerWindow::bIsCollectorReady) bIsReady = TRUE;
+        if (IAMHandlerWindow.bIsReady) bIsReady = TRUE;
         Sleep(50);
     }
     if (!bIsReady) {
@@ -555,7 +458,15 @@ BOOL WTMAPI WTMInit() {
 
     // 3. Collector Start
     DEBUGLOG("Communication: --> Collector start");
-    __WTMSendMessageEx(hCollectorWnd, IAMHandlerWindow::hWnd, WM_COLLECTORSTART);
+    TempMessage.dwData = WM_COLLECTORSTART;
+    TempMessage.lpData = NULL;
+    TempMessage.cbData = 0;
+    bRes = SendMessage(hCollectorWnd, WM_COPYDATA, (WPARAM)IAMHandlerWindow.hWnd, (LPARAM)&TempMessage);
+    if (bRes != ERROR_SUCCESS) {
+        DEBUGERR("Communication: Can not send WM_COLLECTORSTART message");
+        DEBUGLOG("Failure Exit: WTMInit");
+        return FALSE;
+    }
 
     DEBUGLOG("Successful Exit: WTMInit");
 
@@ -570,14 +481,14 @@ BOOL WTMAPI WTMUninit() {
     if (!WTMCheckForDll()) return TRUE;
 
     // Unload COLLECTORIMAGE
-    if (!__WTMUnloadCollector()) return FALSE;
+    if (!WTMUnloadCollector()) return FALSE;
 
     // Close handler window and wait
-    SendMessage(IAMHandlerWindow::hWnd, WM_CLOSE, 0, 0);
-    while (!IAMHandlerWindow::bThreadStopped) {
+    SendMessage(IAMHandlerWindow.hWnd, WM_CLOSE, 0, 0);
+    while (!IAMHandlerWindow.bThreadStopped) {
         Sleep(50);
     }
-    IAMHandlerWindow::Reset();
+    IAMHandlerWindow.Reset();
 
     return TRUE;
 }
@@ -628,27 +539,65 @@ HWND WTMAPI WTMCreateUIAccessWindowW(
     _In_opt_ LPVOID lpParam
 ) {
     if (lpClassName == NULL || lpWindowName == NULL) return NULL;
-	// Get function address
-	HMODULE hUser32 = GetModuleHandle(TEXT("User32.dll"));
-	if (hUser32 == NULL) return NULL;
-	GetWindowBand pGetWindowBand = (GetWindowBand)GetProcAddress(hUser32, "GetWindowBand");
-	CreateWindowInBand pCreateWindowInBand = (CreateWindowInBand)GetProcAddress(hUser32, "CreateWindowInBand");
-	SetWindowBand pSetWindowBand = (SetWindowBand)GetProcAddress(hUser32, "SetWindowBand");
-	if (pGetWindowBand == NULL || pCreateWindowInBand == NULL || pSetWindowBand == NULL) return NULL;
+
+    // Temporarily load dynamic libraries and obtain addresses of undisclosed API functions
+    BOOL bIsUser32Loaded = FALSE;
+    HMODULE hUser32 = GetModuleHandle(TEXT("User32.dll"));
+    if (hUser32 == NULL) {
+        hUser32 = LoadLibrary(TEXT("User32.dll"));
+        if (hUser32 == NULL) {
+            DEBUGERR("CreateUIAccessWindow: Can not get handle of User32.dll");
+            DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+            return FALSE;
+        }
+        bIsUser32Loaded = TRUE;
+    }
+    T_GetWindowBand pGetWindowBand = (T_GetWindowBand)GetProcAddress(hUser32, "GetWindowBand");
+    T_CreateWindowInBand pCreateWindowInBand = (T_CreateWindowInBand)GetProcAddress(hUser32, "CreateWindowInBand");
+    if (pGetWindowBand == NULL || pCreateWindowInBand == NULL) {
+        DEBUGERR("CreateUIAccessWindow: Can not get all function addresses");
+        DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+        return FALSE;
+    }
+    if (bIsUser32Loaded) {
+        BOOL bRes = FreeLibrary(hUser32);
+        if (bRes != ERROR_SUCCESS) {
+            DEBUGERR("CreateUIAccessWindow: Can not free User32.dll");
+            DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+            return FALSE;
+        }
+    }
 
 	// Prepare UIAccess
 	DWORD dwErr = PrepareForUIAccess();
-	if (ERROR_SUCCESS != dwErr) return NULL;
+    if (ERROR_SUCCESS != dwErr) {
+        DEBUGERR("CreateUIAccessWindow: Can not get UIAccess");
+        DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+        return NULL;
+    }
 
 	HWND Window = pCreateWindowInBand(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam, ZBID_UIACCESS);
-	if (Window == NULL) return NULL;
+    if (Window == NULL) {
+        DEBUGERR("CreateUIAccessWindow: CreateWindowInBand failed");
+        DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+        return NULL;
+    }
 
 	// Verify Z sequence segment
 	DWORD bandCheck;
 	if (pGetWindowBand(Window, &bandCheck)) {
-		if (bandCheck != ZBID_UIACCESS) return NULL;
+        if (bandCheck != ZBID_UIACCESS) {
+            DestroyWindow(Window);
+            DEBUGERR("CreateUIAccessWindow: Window created but Z-Order band is incorrect");
+            DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+            return NULL;
+        }
 	}
-	else return NULL;
+    else {
+        DEBUGERR("CreateUIAccessWindow: GetWindowBand failed");
+        DEBUGLOG("Failure Exit: WTMCreateUIAccessWindowW");
+        return NULL;
+    }
 	return Window;
 }
 HWND WTMAPI WTMCreateUIAccessWindowA(
@@ -688,7 +637,7 @@ BOOL WTMAPI WTMSetWindowBand(
     
     // Wait for the backend to be ready (check if the flag file has been generated)
     for (nTime = 0, bIsReady = FALSE; !bIsReady && nTime <= COLLECTOR_TIMEOUT; nTime += 50) {
-        if (IAMHandlerWindow::bIsCollectorReady) bIsReady = TRUE;
+        if (IAMHandlerWindow.bIsReady) bIsReady = TRUE;
         Sleep(50);
     }
     if (!bIsReady) {
@@ -706,22 +655,22 @@ BOOL WTMAPI WTMSetWindowBand(
     }
 
     // Send window information
-    COPYDATASTRUCT RequestDataInfo;
+    COPYDATASTRUCT RequestDataInfo{ 0 };
     IAMCollectorRequest RequestData;
-    RequestData.hWnd = hWnd;
-    RequestData.hWndInsertAfter = hWndInsertAfter;
-    RequestData.dwBand = dwBand;
-    RequestDataInfo.dwData = WM_PERFORM;
+    IAM_SetWindowBand_RequestArguments* pRequestArguments = &RequestData.Arguments.SetWindowBand;
+    IAM_SetWindowBand_ResponseArguments* pResponseArguments = &IAMHandlerWindow.Response.Arguments.SetWindowBand;
+    RequestData.RequestType = IAM_SetWindowBand;
+    pRequestArguments->hWnd = hWnd;
+    pRequestArguments->hWndInsertAfter = hWndInsertAfter;
+    pRequestArguments->dwBand = dwBand;
+    RequestDataInfo.dwData = WM_IAM_OPERATION_REQUEST;
     RequestDataInfo.cbData = sizeof(RequestData);
     RequestDataInfo.lpData = &RequestData;
-    DEBUGLOG("Handler: hWnd=" + std::to_string((ULONG64)RequestData.hWnd));
-    DEBUGLOG("Handler: hWndInsertAfter=" + std::to_string((ULONG64)RequestData.hWndInsertAfter));
-    DEBUGLOG("Handler: dwBand=" + std::to_string((ULONG64)RequestData.dwBand));
     SendMessage(hCollectorWnd, WM_COPYDATA, NULL, (LPARAM)&RequestDataInfo);
 
     // Collect response
     for (nTime = 0, bIsReady = FALSE; !bIsReady && nTime <= COLLECTOR_TIMEOUT; nTime += 50) {
-        if (IAMHandlerWindow::Response.bCollected) bIsReady = TRUE;
+        if (IAMHandlerWindow.Response.bCollected) bIsReady = TRUE;
         Sleep(50);
     }
     if (!bIsReady) {
@@ -731,10 +680,10 @@ BOOL WTMAPI WTMSetWindowBand(
         return FALSE;
     }
 
-    // Set error
-    SetLastError(IAMHandlerWindow::Response.dwErrorCode);
-    BOOL bRes = IAMHandlerWindow::Response.bStatus;
-    IAMHandlerWindow::Response.bCollected = FALSE;
+    // Set error and status
+    SetLastError(pResponseArguments->dwErrorCode);
+    BOOL bRes = pResponseArguments->bStatus;
+    IAMHandlerWindow.Response.bCollected = FALSE;
     return bRes;
 }
 
@@ -793,10 +742,32 @@ BOOL WTMAPI WTMGetWindowBand(
     _In_ LPDWORD pdwBand
 ) {
     if (pdwBand == NULL) return FALSE;
-    // Get function address
+    // Temporarily load dynamic libraries and obtain addresses of undisclosed API functions
+    BOOL bIsUser32Loaded = FALSE;
     HMODULE hUser32 = GetModuleHandle(TEXT("User32.dll"));
-    if (hUser32 == NULL) return FALSE;
-    GetWindowBand pGetWindowBand = (GetWindowBand)GetProcAddress(hUser32, "GetWindowBand");
+    if (hUser32 == NULL) {
+        hUser32 = LoadLibrary(TEXT("User32.dll"));
+        if (hUser32 == NULL) {
+            DEBUGERR("WTMInit: Can not get handle of User32.dll");
+            DEBUGLOG("Failure Exit: WTMInit");
+            return FALSE;
+        }
+        bIsUser32Loaded = TRUE;
+    }
+    T_GetWindowBand pGetWindowBand = (T_GetWindowBand)GetProcAddress(hUser32, "GetWindowBand");
+    if (pGetWindowBand == NULL) {
+        DEBUGERR("WTMInit: Can not get all function addresses");
+        DEBUGLOG("Failure Exit: WTMInit");
+        return FALSE;
+    }
+    if (bIsUser32Loaded) {
+        BOOL bRes = FreeLibrary(hUser32);
+        if (bRes != ERROR_SUCCESS) {
+            DEBUGERR("WTMInit: Can not free User32.dll");
+            DEBUGLOG("Failure Exit: WTMInit");
+            return FALSE;
+        }
+    }
     if (pGetWindowBand == NULL) return FALSE;
     BOOL bRes = pGetWindowBand(hWnd, pdwBand);
     return bRes;
@@ -818,7 +789,7 @@ BOOL APIENTRY DllMain(
     case DLL_PROCESS_DETACH:
 
         // Unload COLLECTORIMAGE
-        if (!__WTMUnloadCollector()) DEBUGERR("Unload COLLECTORIMAGE error");
+        if (!WTMUnloadCollector()) DEBUGERR("Unload COLLECTORIMAGE error");
 
         break;
 
@@ -832,5 +803,4 @@ BOOL APIENTRY DllMain(
 
 #if defined(__cplusplus)
 }
-
 #endif

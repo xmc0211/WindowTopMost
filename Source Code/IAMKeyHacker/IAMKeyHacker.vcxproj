@@ -144,12 +144,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common Headers\Framework.h" />
     <ClInclude Include="disasm-lib\cpu.h" />
     <ClInclude Include="disasm-lib\disasm.h" />
     <ClInclude Include="disasm-lib\disasm_x86.h" />
     <ClInclude Include="disasm-lib\disasm_x86_tables.h" />
     <ClInclude Include="disasm-lib\misc.h" />
-    <ClInclude Include="framework.h" />
+    <ClInclude Include="IAMKeyBlock.h" />
     <ClInclude Include="mhook-lib\mhook.h" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +158,7 @@
     <ClCompile Include="disasm-lib\disasm.c" />
     <ClCompile Include="disasm-lib\disasm_x86.c" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="IAMKeyBlock.cpp" />
     <ClCompile Include="mhook-lib\mhook.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -279,7 +279,7 @@ void TASKDIALOGEX::AddButton(INT iButtonID, std::_tstring lpcName, std::_tstring
 }
 // Set default button
 void TASKDIALOGEX::SetDefaultButton(INT iButtonIndx) {
-	tdc.nDefaultRadioButton = iButtonIndx;
+	tdc.nDefaultButton = iButtonIndx;
 }
 // Add radio button
 void TASKDIALOGEX::AddRadioButton(INT iButtonID, std::_tstring lpcName) {
@@ -408,5 +408,4 @@ INT TaskDialogEx(std::_tstring MainInstruction, std::_tstring Content, TASKDIALO
 	tdx.AddButton(Buttons);
 	tdx.Show();
 	return tdx.GetButtonID();
-
 }
