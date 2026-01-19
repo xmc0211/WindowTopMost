@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef FRAMEWORK_H
-#define FRAMEWORK_H
+#ifndef WTM_FRAMEWORK_H
+#define WTM_FRAMEWORK_H
 
 #define WIN32_LEAN_AND_MEAN
 
@@ -34,6 +34,8 @@
 #ifdef _DEBUG
 #include <fstream>
 #endif
+
+#include "ErrorCodes.h"
 
 // Unpublished API function prototype definition
 typedef BOOL(WINAPI* T_GetWindowBand)(
@@ -69,7 +71,7 @@ typedef HWND(WINAPI* T_CreateWindowInBandEx)(
     HINSTANCE hInstance,
     LPVOID lpParam,
     DWORD dwBand,               // Window Z-Order Band
-    DWORD Flag                  // [The meaning of the flag is unclear now. Welcome developers to explore it.]
+    DWORD dwInternalFlag        // [The meaning of this flag is unclear now. For more information, Please review file "CreateWindowInBand-dwInternalFlag-informations.md".]
     );
 typedef BOOL(WINAPI* T_SetWindowBand)(
     HWND hWnd,                  // Handle of the window
@@ -82,7 +84,7 @@ typedef BOOL(WINAPI* T_NtUserEnableIAMAccess)(
     );
 
 // Collector message (request or response) type, used to distinguish message parameters
-enum IAMCollectorMessageType : UINT {
+enum IAMWorkerMessageType : UINT {
     IAM_NONE = 0, // Default
     IAM_GetIAMKey, // Get IAM Key
 	IAM_SetWindowBand, // Call SetWindowBand
@@ -92,7 +94,7 @@ enum IAMCollectorMessageType : UINT {
 
 // Debugging output
 #ifdef _DEBUG
-#define DEBUGLOG(Text) do { std::ofstream Log("D:\\DebugLog_WindowTopMost.txt", std::ios::app); Log << Text << std::endl; } while (0)
+#define DEBUGLOG(Text) do { DWORD __nErrorTemp = GetLastError(); std::ofstream Log("D:\\WTM_DebugLog.txt", std::ios::app); Log << Text << std::endl; SetLastError(__nErrorTemp); } while (0)
 #define DEBUGERR(Text) DEBUGLOG(Text + (", " + std::to_string((ULONG)GetLastError())))
 #else
 #define DEBUGLOG(Text) do {  } while (0)
@@ -100,31 +102,50 @@ enum IAMCollectorMessageType : UINT {
 #endif
 
 // The program uses window messages to transfer data.
-// WND_COLLEXTOR_CLASSNAME and WND_HANDLER_CLASSNAME is the window class name.
-#define WND_COLLECTOR_CLASSNAME         TEXT("IAMCollector_7DD48162_2BC7_4073_9CC8_51CC3DB0FF72")
-#define WND_HANDLER_CLASSNAME           TEXT("IAMHandler_D06B7428_73FA_4967_B30C_96030ACCF998")
+// WND_COLLEXTOR_CLASSNAME and IAMCONTROLLER_WINDOW_CLASSNAME is the window class name.
+#define IAMWORKER_WINDOW_CLASSNAME      TEXT("IAMWorker_7DD48162_2BC7_4073_9CC8_51CC3DB0FF72")
+#define IAMCONTROLLER_WINDOW_CLASSNAME  TEXT("IAMController_D06B7428_73FA_4967_B30C_96030ACCF998")
 #define WM_IAM_OPERATION_REQUEST        (WM_USER + 1)
-#define WM_HANDLERHELLO                 (WM_USER + 2)
-#define WM_COLLECTORHELLO               (WM_USER + 3)
-#define WM_COLLECTORSTART               (WM_USER + 4)
+#define WM_IAMCONTROLLERHELLO           (WM_USER + 2)
+#define WM_IAMWORKERHELLO               (WM_USER + 3)
+#define WM_IAMWORKERSTART               (WM_USER + 4)
 #define WM_IAM_OPERATION_RESPONSE       (WM_USER + 5)
 
 // Lure EXPLORER Delay between EXE operations (ms)
-#define INDUCE_FOREGROUND_DELAY (100ul)
-#define INDUCE_STARTMENU_DELAY (200ul)
-#define COLLECTOR_TIMEOUT (2000)
+#define INDUCE_FOREGROUND_DELAY         (100ul)
+#define INDUCE_STARTMENU_DELAY          (50ul)
+#define IAMWORKER_TIMEOUT               (2000ul)
+
+// The maximum length of the window name and window class name obtained from actual testing
+#define MAX_WINDOW_NAME                 (0x00010000) // 65536 Characters (not bytes)
+#define MAX_WINDOW_CLASS_NAME           (0x00000100) // 256 Characters
+
+// The structor of extended data information
+//                        [PCOPYDATASTRUCT]->
+// +-------------------+--------------------------------------------+
+// | Request Arguments | Extended Data [strings, dynamic values...] |
+// +-------------------+--------------------------------------------+
+// When sending message WM_COPYDATA, some memory space will be added after the structure
+// to store one or more extended data. When extended data is required in the request, 
+// the offset and data size of the extended data relative to the structure header will 
+// be passed.
+typedef struct _IAMExtendedDataInformation {
+    SIZE_T nOffset; // The offset of the extended data relative to the structure IAMWorkerRequest or IAMWorkerResponse
+    SIZE_T nSize; // The data size of the extended data relative to the structure IAMWorkerRequest or IAMWorkerResponse
+} IAMExtendedDataInformation;
 
 // Call SetWindowBand request arguments
-struct IAM_SetWindowBand_RequestArguments {
+typedef struct _IAM_SetWindowBand_RequestArguments {
     HWND hWnd;
     HWND hWndInsertAfter;
     DWORD dwBand;
-};
+} IAM_SetWindowBand_RequestArguments;
+
 // Call CreateWindowInBand request arguments
-struct IAM_CreateWindowInBand_RequestArguments {
+typedef struct _IAM_CreateWindowInBand_RequestArguments {
     DWORD dwExStyle;
-    LPCWSTR lpClassName;
-    LPCWSTR lpWindowName;
+    IAMExtendedDataInformation lpClassName; // The string will saved in extended data
+    IAMExtendedDataInformation lpWindowName; // The string will saved in extended data
     DWORD dwStyle;
     int X;
     int Y;
@@ -135,12 +156,13 @@ struct IAM_CreateWindowInBand_RequestArguments {
     HINSTANCE hInstance;
     LPVOID lpParam;
     DWORD dwBand;
-};
+} IAM_CreateWindowInBand_RequestArguments;
+
 // Call CreateWindowInBand request arguments
-struct IAM_CreateWindowInBandEx_RequestArguments {
+typedef struct _IAM_CreateWindowInBandEx_RequestArguments {
     DWORD dwExStyle;
-    LPCWSTR lpClassName;
-    LPCWSTR lpWindowName;
+    IAMExtendedDataInformation lpClassName; // The string will saved in extended data
+    IAMExtendedDataInformation lpWindowName; // The string will saved in extended data
     DWORD dwStyle;
     int X;
     int Y;
@@ -151,33 +173,40 @@ struct IAM_CreateWindowInBandEx_RequestArguments {
     HINSTANCE hInstance;
     LPVOID lpParam;
     DWORD dwBand;
-    DWORD Flag;
-};
+    DWORD dwInternalFlag;
+} IAM_CreateWindowInBandEx_RequestArguments;
+
 // Call SetWindowBand response arguments
-struct IAM_SetWindowBand_ResponseArguments {
+typedef struct _IAM_SetWindowBand_ResponseArguments {
     BOOL bStatus;
     DWORD dwErrorCode;
-};
+} IAM_SetWindowBand_ResponseArguments;
+
 // Call CreateWindowInBand response arguments
-struct IAM_CreateWindowInBand_ResponseArguments {
+typedef struct _IAM_CreateWindowInBand_ResponseArguments {
     HWND hWnd;
     DWORD dwErrorCode;
-};
-// Call CreateWindowInBand response arguments
-struct IAM_CreateWindowInBandEx_ResponseArguments {
+} IAM_CreateWindowInBand_ResponseArguments;
+
+// Call CreateWindowInBandEx response arguments
+typedef struct _IAM_CreateWindowInBandEx_ResponseArguments {
     HWND hWnd;
     DWORD dwErrorCode;
-};
+} IAM_CreateWindowInBandEx_ResponseArguments;
+
 // Get IAM key response arguments
-struct IAM_GetIAMKey_ResponseArguments {
+typedef struct _IAM_GetIAMKey_ResponseArguments {
     ULONGLONG nIAMKey;
     DWORD dwErrorCode;
-};
+} IAM_GetIAMKey_ResponseArguments;
 
-// The structure of IAMCollector request and response
-struct IAMCollectorRequest {
+// The structure of IAMWorker request and response
+typedef struct _IAMWorkerRequest {
     // Type of the request
-    IAMCollectorMessageType RequestType;
+    IAMWorkerMessageType RequestType;
+
+    // Size of extended data
+    SIZE_T nExtendedDataSize;
 
     // Request arguments
     union IAMRequestArguments {
@@ -186,14 +215,19 @@ struct IAMCollectorRequest {
         IAM_CreateWindowInBandEx_RequestArguments CreateWindowInBandEx;
     } Arguments;
 
-    IAMCollectorRequest() : RequestType(IAM_NONE), Arguments({ 0 }) {}
-};
-struct IAMCollectorResponse {
+    _IAMWorkerRequest() : RequestType(IAM_NONE), nExtendedDataSize(0) {
+        ZeroMemory(&Arguments, sizeof(Arguments));
+    }
+} IAMWorkerRequest;
+typedef struct _IAMWorkerResponse {
     // Is the request being processed
     BOOL bCollected;
 
     // Type of the response
-    IAMCollectorMessageType ResponseType;
+    IAMWorkerMessageType ResponseType;
+
+    // Size of extended data
+    SIZE_T nExtendedDataSize;
 
     // Response arguments
     union IAMResponseArguments {
@@ -203,7 +237,9 @@ struct IAMCollectorResponse {
         IAM_GetIAMKey_ResponseArguments GetIAMKey;
     } Arguments;
 
-    IAMCollectorResponse() : ResponseType(IAM_NONE), bCollected(FALSE), Arguments({ 0 }) {}
-};
+    _IAMWorkerResponse() : bCollected(FALSE), ResponseType(IAM_NONE), nExtendedDataSize(0) {
+        ZeroMemory(&Arguments, sizeof(Arguments));
+    }
+} IAMWorkerResponse;
 
 #endif

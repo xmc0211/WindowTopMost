@@ -487,7 +487,7 @@ void OutputCPUState(INSTRUCTION *Instruction, INSTRUCTION_OPERAND *Operand, U32 
 typedef void (*OUTPUT_OPTYPE)(INSTRUCTION *Instruction, INSTRUCTION_OPERAND *Operand, U32 OperandIndex);
 #define OPTYPE_SHIFT 24
 #define MAX_OPTYPE_INDEX 26
-OUTPUT_OPTYPE OptypeHandlers[] =
+OUTPUT_OPTYPE OptypeIAMControllers[] =
 {
     NULL,
     OutputBounds,         // 01 OPTYPE_a
@@ -2510,7 +2510,7 @@ abort:
 #ifdef TEST_DISASM
         printf("Dump of 0x%04I64X:\n", VIRTUAL_ADDRESS);
         __try { DumpAsBytes(stdout, Instruction->Address, (ULONG_PTR)VIRTUAL_ADDRESS, 16, TRUE); }
-        __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {}
+        __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_IAMCONTROLLER : EXCEPTION_CONTINUE_SEARCH) {}
 #endif
         fflush(stdout);
     }
@@ -4082,8 +4082,8 @@ INTERNAL U8 *SetOperands(INSTRUCTION *Instruction, U8 *Address, U32 Flags)
         if (Disassemble)
         {
             Index = OperandType >> OPTYPE_SHIFT;
-            assert(Index > 0 && Index < MAX_OPTYPE_INDEX && OptypeHandlers[Index]);
-            OptypeHandlers[Index](Instruction, Operand, OperandIndex);
+            assert(Index > 0 && Index < MAX_OPTYPE_INDEX && OptypeIAMControllers[Index]);
+            OptypeIAMControllers[Index](Instruction, Operand, OperandIndex);
             X86_WRITE_OPFLAGS();
         }
     }
@@ -4096,7 +4096,7 @@ abort:
 #ifdef TEST_DISASM
         printf("Dump of 0x%04I64X:\n", VIRTUAL_ADDRESS);
         __try { DumpAsBytes(stdout, Instruction->Address, (ULONG_PTR)VIRTUAL_ADDRESS, 16, TRUE); }
-        __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {}
+        __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_IAMCONTROLLER : EXCEPTION_CONTINUE_SEARCH) {}
 #endif
         fflush(stdout);
     }

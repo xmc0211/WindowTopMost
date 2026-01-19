@@ -152,25 +152,25 @@
       <UACUIAccess>false</UACUIAccess>
     </Link>
     <PreBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)x64\Release\WindowTopMost.lib" "$(ProjectDir)WindowTopMost.lib"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>DEL "$(ProjectDir)WindowTopMost.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common Headers\ErrorCodes.h" />
+    <ClInclude Include="..\Common Headers\ThreadStopHandler.h" />
     <ClInclude Include="..\Common Headers\WindowTopMost.h" />
     <ClInclude Include="Convert.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="Launcher.h" />
+    <ClInclude Include="Framework.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="TaskDialogEx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Common Headers\ThreadStopHandler.cpp" />
     <ClCompile Include="Convert.cpp" />
     <ClCompile Include="Launcher.cpp" />
-    <ClCompile Include="TaskDialogEx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Launcher.rc" />

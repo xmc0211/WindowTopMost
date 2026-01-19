@@ -124,7 +124,7 @@
 #define OPTYPE_sdo  0x17000000 // OPTYPE_ss or OPTYPE_o
 #define OPTYPE_cpu  0x18000000 // pointer to CPU state structure
 #define OPTYPE_lea  0x19000000 // size set by other operand
-// NOTE: if you change this, you must also update OptypeHandlers[] in disasm_x86.c
+// NOTE: if you change this, you must also update OptypeIAMControllers[] in disasm_x86.c
 // Be sure to preserve the ordering
 
 //////////////////////////////////////////////////////////////////////

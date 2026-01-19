@@ -41,10 +41,12 @@
 #define WTMCONFIG_H
 
 #include <Windows.h>
+#include "ErrorCodes.h"
+
 
 // Windows 7 and below versions do not support the use of Z-Order bands. If you want to place the window at the forefront, you can periodically call SetWindowPos to place it at the top.
 #if WINVER < 0x0800 || _WIN32_WINNT < 0x0800
-#error Win7 and below versions are not applicable to this library. Please consider using 'SetWindowPos'.
+#error Windows 7 and below versions are not applicable to this library. Please consider using 'SetWindowPos'.
 #endif
 
 // Some ZBID are only available for Windows 10 and above. Add the UNUSED_ prefix to ZBID that are not supported in the current version.
@@ -54,6 +56,7 @@
 #define WIN10UP(i) ZBID_UNUSED_ ## i
 #endif
 
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -61,7 +64,7 @@ extern "C" {
 // Z-Order bands that can be used in windows
 // The default is ZBID_DESKTOP, with ZBID_UIACCESS at the top. The priority here is sorted from low to high.
 enum ZBID : DWORD {
-	ZBID_DEFAULT					 = 0,	// Default Z-Order bands (ZBID_DESKTOP, Windows will not process this )
+	ZBID_DEFAULT					 = 0,	// Default Z-Order bands (ZBID_DESKTOP, Windows will not process this Z-Order band)
 	ZBID_DESKTOP					 = 1,	// Normal window
 	ZBID_IMMERSIVE_RESTRICTED		 = 15,	// ** Generally not used **
 	ZBID_IMMERSIVE_BACKGROUND		 = 12,
@@ -86,23 +89,36 @@ enum ZBID : DWORD {
 #ifndef __WTM_IS_COMPILING
 
 // Check if Dll has been successfully injected
+_Success_(return == TRUE)
 BOOL WTMAPI WTMCheckForDll();
 
+// Unload IAMWorker
+// If the program crashes and leaves IAMWorker in Explorer.EXE, you can call this function directly to clean it up.
+_Success_(return == TRUE)
+BOOL WTMAPI WTMUnloadWorker();
+
 // Check if the operating system meets the requirements
+_Success_(return == TRUE)
 BOOL WTMAPI WTMCheckEnvironment();
 
 // WindowTopMost initialization function. You must call it in your program.
+// If the IAMWorker crashes, you can call this function directly to reload it.
+_Success_(return == TRUE)
 BOOL WTMAPI WTMInit();
 
 // WindowTopMost uninstallation function. You must call it in your program. 
+// If the program crashes and leaves IAMWorker in Explorer.EXE, you can call this function directly to unload it.
+_Success_(return == TRUE)
 BOOL WTMAPI WTMUninit();
 
 // Obtain UIAccess permission by restarting the application
 // There is no need to manually call this function.
+_Success_(return == TRUE)
 BOOL WTMAPI WTMEnableUIAccess(BOOL bEnable);
 
 // Create the top-level window using UIAccess and verify if the Z segment is correct. If an error occurs, return NULL.
 // The application will restart.
+_Success_(return != NULL)
 HWND WTMAPI WTMCreateUIAccessWindowW(
 	_In_ DWORD dwExStyle,
 	_In_ LPCWSTR lpClassName,
@@ -117,6 +133,7 @@ HWND WTMAPI WTMCreateUIAccessWindowW(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ LPVOID lpParam
 );
+_Success_(return != NULL)
 HWND WTMAPI WTMCreateUIAccessWindowA(
 	_In_ DWORD dwExStyle,
 	_In_ LPCSTR lpClassName,
@@ -132,20 +149,30 @@ HWND WTMAPI WTMCreateUIAccessWindowA(
 	_In_opt_ LPVOID lpParam
 );
 #ifdef UNICODE
-#define CreateTopMostWindow WTMCreateUIAccessWindowW
+#define WTMCreateUIAccessWindow WTMCreateUIAccessWindowW
 #else
-#define CreateTopMostWindow WTMCreateUIAccessWindowA
+#define WTMCreateUIAccessWindow WTMCreateUIAccessWindowA
 #endif
 
 // SetWindowBand that does not deny access.
 // It will return the actual result of SetWindowBand and set error code.
+_Success_(return == TRUE)
 BOOL WTMAPI WTMSetWindowBand(
-	_In_opt_ HWND hWnd,
-	_In_opt_ HWND hWndInsertAfter,
-	_In_opt_ DWORD dwBand
+	_In_opt_ HWND hWnd,                  // Handle of the window
+	_In_opt_ HWND hWndInsertAfter,       // Same parameter meaning as SetWindowPos
+	_In_opt_ DWORD dwBand                // Window Z-Order Band
 );
 
-// CreateWindowInBand will not deny access and will return NULL if an error occurs.
+// CreateWindowInBand that does not deny access.
+// It will return NULL if an error occurs.
+//
+// Since real API functions are called in Explorer.EXE, calling these two function interface here has certain restrictions:
+// 1. When registering a window class, the CS_GLOBALCLASS style should be set to ensure that Explorer.EXE can access the window class;
+// 2. The window message loop has already been written in IAMWorker, and after calling the interface, you cannot write a message loop in your code.
+// 3. Real API functions does not support some window segments.
+// If you want to implement this feature more stably or flexibly, please first create a window with CreateWindowEx and then set Z-Order band with SetWindowBand.
+//
+_Success_(return != NULL)
 HWND WTMAPI WTMCreateWindowInBandW(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCWSTR lpClassName,
@@ -161,6 +188,7 @@ HWND WTMAPI WTMCreateWindowInBandW(
 	_In_opt_ LPVOID lpParam,
 	_In_ ZBID dwBand
 );
+_Success_(return != NULL)
 HWND WTMAPI WTMCreateWindowInBandA(
 	_In_ DWORD dwExStyle,
 	_In_opt_ LPCSTR lpClassName,
@@ -177,16 +205,70 @@ HWND WTMAPI WTMCreateWindowInBandA(
 	_In_ ZBID dwBand
 );
 #ifdef UNICODE
-#define CreateWindowInBandEx WTMCreateWindowInBandW
+#define WTMCreateWindowInBand WTMCreateWindowInBandW
 #else
-#define CreateWindowInBandEx WTMCreateWindowInBandA
+#define WTMCreateWindowInBand WTMCreateWindowInBandA
 #endif
 
-// GetWindowBand call entrance, and if an error occurs, returns False.
-BOOL WTMAPI WTMGetWindowBand(
-	_In_ HWND hWnd,
-	_In_ LPDWORD pdwBand
+// CreateWindowInBand that does not deny access.
+// It will return NULL if an error occurs.
+//
+// Since real API functions are called in Explorer.EXE, calling these two function interface here has certain restrictions:
+// 1. When registering a window class, the CS_GLOBALCLASS style should be set to ensure that Explorer.EXE can access the window class;
+// 2. The window message loop has already been written in IAMWorker, and after calling the interface, you cannot write a message loop in your code.
+// 3. Real API functions does not support some window segments.
+// If you want to implement this feature more stably or flexibly, please first create a window with CreateWindowEx and then set Z-Order band with SetWindowBand.
+//
+_Success_(return != NULL)
+HWND WTMAPI WTMCreateWindowInBandExW(
+	_In_ DWORD dwExStyle,
+	_In_opt_ LPCWSTR lpClassName,
+	_In_opt_ LPCWSTR lpWindowName,
+	_In_ DWORD dwStyle,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int nWidth,
+	_In_ int nHeight,
+	_In_opt_ HWND hWndParent,
+	_In_opt_ HMENU hMenu,
+	_In_ HINSTANCE hInstance,
+	_In_opt_ LPVOID lpParam,
+	_In_ ZBID dwBand,					// Window Z-Order Band
+	_In_opt_ DWORD dwInternalFlag       // [The meaning of this flag is unclear now. For more information, Please review file "CreateWindowInBand-dwInternalFlag-informations.md".]
 );
+_Success_(return != NULL)
+HWND WTMAPI WTMCreateWindowInBandExA(
+	_In_ DWORD dwExStyle,
+	_In_opt_ LPCSTR lpClassName,
+	_In_opt_ LPCSTR lpWindowName,
+	_In_ DWORD dwStyle,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int nWidth,
+	_In_ int nHeight,
+	_In_opt_ HWND hWndParent,
+	_In_opt_ HMENU hMenu,
+	_In_ HINSTANCE hInstance,
+	_In_opt_ LPVOID lpParam,
+	_In_ ZBID dwBand,					// Window Z-Order Band
+	_In_opt_ DWORD dwInternalFlag       // [The meaning of this flag is unclear now. For more information, Please review file "CreateWindowInBand-dwInternalFlag-informations.md".]
+);
+#ifdef UNICODE
+#define WTMCreateWindowInBandEx WTMCreateWindowInBandExW
+#else
+#define WTMCreateWindowInBandEx WTMCreateWindowInBandExA
+#endif
+
+// GetWindowBand call entrance, and if an error occurs, returns FALSE.
+_Success_(return == TRUE)
+BOOL WTMAPI WTMGetWindowBand(
+	_In_ HWND hWnd,						// Handle of the window
+	_In_ LPDWORD pdwBand				// Z-Order Band output
+);
+
+// Get IAM Access key, and if an error occurs, returns 0.
+_Success_(return == TRUE)
+BOOL WTMAPI WTMGetIAMKey(ULONGLONG* pIAMKey);
 
 #endif
 

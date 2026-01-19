@@ -43,7 +43,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -143,15 +143,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common Headers\ErrorCodes.h" />
     <ClInclude Include="..\Common Headers\Framework.h" />
+    <ClInclude Include="..\Common Headers\ThreadStopHandler.h" />
     <ClInclude Include="..\Common Headers\WindowTopMost.h" />
     <ClInclude Include="Convert.h" />
-    <ClInclude Include="uiaccess.h" />
+    <ClInclude Include="UIAccess.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Common Headers\ThreadStopHandler.cpp" />
     <ClCompile Include="Convert.cpp" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="uiaccess.c" />
+    <ClCompile Include="DllMain.cpp" />
+    <ClCompile Include="UIAccess.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
