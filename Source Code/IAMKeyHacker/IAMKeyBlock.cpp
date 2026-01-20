@@ -105,3 +105,22 @@ BOOL IAMKeyRead(ULONGLONG* pKey) {
     // Unable to find data block, return error
     return FALSE;
 }
+
+// Release saved key from memory.
+BOOL IAMKeyRelease() {
+    // Attempt to search for existing memory blocks
+    IAMBlockData* pData;
+    BOOL bRes = IAMKeyFind(&pData);
+
+    if (bRes) {
+        // Release memory
+        return VirtualFree(
+            (LPVOID)pData,
+            0,
+            MEM_RELEASE
+        );
+    }
+
+    // Unable to find data block, return error
+    return FALSE;
+}

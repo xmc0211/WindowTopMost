@@ -43,4 +43,7 @@ BOOL IAMKeyWrite(ULONGLONG Key);
 // Get key from memory.
 BOOL IAMKeyRead(ULONGLONG* pKey);
 
+// Release saved key from memory.
+BOOL IAMKeyRelease();
+
 #endif

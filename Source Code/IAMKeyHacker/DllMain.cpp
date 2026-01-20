@@ -681,26 +681,24 @@ BOOL WINAPI IAMNtUserEnableIAMAccess_Hook(
     DEBUGLOG("IAMNtUserEnableIAMAccess_Hook: Hook function has been called");
 
     // Get the return value of the real function
-    const BOOL bRes = pNtUserEnableIAMAccess(key, enable);
+    const BOOL bResOriginal = pNtUserEnableIAMAccess(key, enable);
 
     // Check if it is successful and if the IAM key has not been set. If it matches, obtain IAM key and uninstall hook
-    if (bRes == TRUE && bIAMKeySaved == FALSE) {
+    if (bResOriginal == TRUE && bIAMKeySaved == FALSE) {
         // Save IAM Key
         nIAMKey = key;
+        BOOL bRes = IAMKeyWrite(nIAMKey);
+        if (!bRes) {
+            DEBUGERR("IAMNtUserEnableIAMAccess_Hook: Can not save IAM key into memory.");
 
-        // The caching function is incomplete ...
-        //BOOL bBlockRes = IAMKeyWrite(nIAMKey);
-        //if (!bBlockRes) {
-        //    DEBUGERR("IAMNtUserEnableIAMAccess_Hook: Can not save IAM key into memory.");
-
-        //    // No impact on usage, continue execution
-        //    // return bRes;
-        //}
+            // No impact on usage, continue execution
+            // return bResOriginal;
+        }
 
         // Set flag as saved
         bIAMKeySaved = TRUE;
         
-        // Start the thread and start monitoring SetWindowBand requests in the registry
+        // Start the thread and start monitoring requests
         hCheckThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)IAMWorkerWindowLoopThread, NULL, NULL, 0);
 
         // Uninstall the hook to stop monitoring
@@ -712,12 +710,12 @@ BOOL WINAPI IAMNtUserEnableIAMAccess_Hook(
         // Error check
         if (hCheckThread == NULL) {
             DEBUGERR("IAMNtUserEnableIAMAccess_Hook: Can not start thread IAMWorkerWindowLoopThread");
-            return bRes;
+            return bResOriginal;
         }
     }
     
     // Return the value that should be returned
-    return bRes;
+    return bResOriginal;
 }
 
 // A function used to lure Explorer.EXE call NtUserEnableIAMAccess
@@ -845,7 +843,7 @@ void CALLBACK IAMAttachMain(
     }
     
     // Temporarily load dynamic libraries and obtain addresses of undisclosed API functions
-    HMODULE hUser32 = GetModuleHandle(TEXT("User32.dll"));
+    HMODULE hUser32 = GetModuleHandle(TEXT("User32.DLL"));
     if (hUser32 == NULL) return;
     pGetWindowBand = (T_GetWindowBand)GetProcAddress(hUser32, "GetWindowBand"); 
     pCreateWindowInBand = (T_CreateWindowInBand)GetProcAddress(hUser32, "CreateWindowInBand");
@@ -862,15 +860,29 @@ void CALLBACK IAMAttachMain(
         return;
     }
 
+    // Attempt to read the saved IAM access key
+    ULONGLONG nSavedIAMKey = 0;
+    if (IAMKeyRead(&nSavedIAMKey)) {
+        // If found, save the key and directly launch the window
+        nIAMKey = nSavedIAMKey;
+        bIAMKeySaved = TRUE;
+
+        // Start the thread and start monitoring requests
+        hCheckThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)IAMWorkerWindowLoopThread, NULL, NULL, 0);
+        if (hCheckThread != NULL) return;
+
+        // If failed, retrieve the key again
+        DEBUGERR("IAMNtUserEnableIAMAccess_Hook: Can not start thread IAMWorkerWindowLoopThread when find IAM access key");
+    }
+
     // Create API hooks using MHook and monitor NtUserEnableIAMAccess
+    bHookCreated = TRUE; // Update State
     if (!Mhook_SetHook((PVOID*)&pNtUserEnableIAMAccess, IAMNtUserEnableIAMAccess_Hook)) {
         DEBUGERR("IAMAttachMain: Can not set API hook");
         return;
     }
-    bHookCreated = TRUE; // Update State
 
     // Lure Explorer.EXE to call NtUserEnableIAMAccess, thereby triggering the hook
-    // Due to system limitations, threads in DllMain cannot run asynchronously, so they run synchronously directly.
     if (!IAMInduceExplorer()) {
         DEBUGERR("IAMAttachMain: Can not induce Explorer.EXE");
         return;

@@ -102,12 +102,10 @@ _Success_(return == TRUE)
 BOOL WTMAPI WTMCheckEnvironment();
 
 // WindowTopMost initialization function. You must call it in your program.
-// If the IAMWorker crashes, you can call this function directly to reload it.
 _Success_(return == TRUE)
 BOOL WTMAPI WTMInit();
 
-// WindowTopMost uninstallation function. You must call it in your program. 
-// If the program crashes and leaves IAMWorker in Explorer.EXE, you can call this function directly to unload it.
+// WindowTopMost uninstallation function. You must call it in your program.
 _Success_(return == TRUE)
 BOOL WTMAPI WTMUninit();
 
@@ -266,7 +264,7 @@ BOOL WTMAPI WTMGetWindowBand(
 	_In_ LPDWORD pdwBand				// Z-Order Band output
 );
 
-// Get IAM Access key, and if an error occurs, returns 0.
+// Get IAM Access key, and if an error occurs, returns FALSE.
 _Success_(return == TRUE)
 BOOL WTMAPI WTMGetIAMKey(ULONGLONG* pIAMKey);
 

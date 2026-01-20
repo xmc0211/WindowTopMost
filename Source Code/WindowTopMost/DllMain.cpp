@@ -35,10 +35,6 @@
 // DLL injection object name
 #define IAMWORKER_IMAGENAME TEXT("IAMKeyHacker.dll")
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 // IAMController hWindow Information
 struct tag_IAMControllerWindow {
     HWND hWnd;
@@ -55,6 +51,19 @@ struct tag_IAMControllerWindow {
         Response = IAMWorkerResponse();
     }
 } IAMControllerWindow;
+
+// Get IAMWorker DLL path
+std::_tstring WTMGetWorkerPath() {
+    TCHAR ModulePathBuffer[2048];
+    GetModuleFileName(NULL, ModulePathBuffer, _countof(ModulePathBuffer));
+    std::_tstring ModuleFullPath(ModulePathBuffer);
+    size_t lastBackslashPos = ModuleFullPath.find_last_of(TEXT("\\"));
+    return ModuleFullPath.substr(0, lastBackslashPos + 1) + IAMWORKER_IMAGENAME;
+}
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 // Auxiliary function used to check if the IAMWorker backend program has been injected
 _Success_(return == TRUE)
@@ -337,18 +346,7 @@ BOOL WTMAPI WTMCheckEnvironment() {
     }
 
     // Check the IAMWorker DLL
-
-    // Get the current directory
-    TCHAR Buffer[MAX_PATH];
-    GetModuleFileName(NULL, Buffer, MAX_PATH);
-    std::_tstring AppPath(Buffer);
-    size_t DrivePoint = AppPath.find_first_of(':');
-    if (DrivePoint == std::_tstring::npos) return FALSE;
-    size_t PathPoint = AppPath.find_last_of('\\');
-    if (PathPoint == std::_tstring::npos) return FALSE;
-    AppPath = AppPath.substr(0, DrivePoint + 1) + AppPath.substr(DrivePoint + 1, PathPoint - DrivePoint);
-
-    if (GetFileAttributes((AppPath + IAMWORKER_IMAGENAME).c_str()) == INVALID_FILE_ATTRIBUTES) {
+    if (GetFileAttributes(WTMGetWorkerPath().c_str()) == INVALID_FILE_ATTRIBUTES) {
         DEBUGERR("WTMCheckEnvironment: DLL not exist or it contains error.");
         SetLastError(ERROR_WTM_ENVIRONMENT);
         return FALSE;
@@ -388,11 +386,7 @@ BOOL WTMAPI WTMInit() {
     }
 
     // Get the complete path of the DLL
-    TCHAR ModulePathBuffer[MAX_PATH];
-    GetModuleFileName(NULL, ModulePathBuffer, MAX_PATH);
-    std::_tstring ModuleFullPath(ModulePathBuffer);
-    size_t lastBackslashPos = ModuleFullPath.find_last_of(TEXT("\\"));
-    std::_tstring dllPath = ModuleFullPath.substr(0, lastBackslashPos + 1) + IAMWORKER_IMAGENAME;
+    std::_tstring WorkerPath = WTMGetWorkerPath();
 
     // Find Explorer.EXE's PID, get ready to inject into the process
     DWORD nProcessID;
@@ -415,7 +409,7 @@ BOOL WTMAPI WTMInit() {
     }
 
     // Allocate memory within the process
-    LPVOID pRemoteMemory = VirtualAllocEx(hProcess, NULL, (dllPath.size() + 1) * sizeof(TCHAR), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    LPVOID pRemoteMemory = VirtualAllocEx(hProcess, NULL, (WorkerPath.size() + 1) * sizeof(TCHAR), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (!pRemoteMemory) {
         DEBUGERR("WTMInit: VirtualAllocEx failed");
         CloseHandle(hProcess);
@@ -424,8 +418,8 @@ BOOL WTMAPI WTMInit() {
     }
 
     // Write DLL path
-    BOOL success = WriteProcessMemory(hProcess, pRemoteMemory, dllPath.c_str(), (dllPath.size() + 1) * sizeof(TCHAR), NULL);
-    if (!success) {
+    BOOL bWriteRes = WriteProcessMemory(hProcess, pRemoteMemory, WorkerPath.c_str(), (WorkerPath.size() + 1) * sizeof(TCHAR), NULL);
+    if (!bWriteRes) {
         DEBUGERR("WTMInit: WriteProcessMemory failed");
         VirtualFreeEx(hProcess, pRemoteMemory, 0, MEM_RELEASE);
         CloseHandle(hProcess);
