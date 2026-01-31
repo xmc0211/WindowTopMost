@@ -18,7 +18,7 @@ https://www.bilibili.com/opus/1023826882327478276 (Author: Wormwaker)
 - - -
 ## Defining Window Z-order “band”
 
-![Windows z-order](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/Windows%20z-order.png?raw=true)
+![Windows z-order](Assets/Windows%20z-order.png?raw=true)
 
 For clarity, in this context the word “band” means group of Z-orders.
 
