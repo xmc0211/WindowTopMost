@@ -44,7 +44,7 @@ The order of bands are the following, from the lowest to the highest Z-order:
 | ZBID_IMMERSIVE_ACTIVEMOBODY | 10 | \[Generally not used\]|
 | ZBID_IMMERSIVE_APPCHROME | 5 | Task View (Win+Tab menu)|
 | ZBID_IMMERSIVE_MOGO | 6 | Start menu, taskbar|
-| ZBID_IMMERSIVE_SEARCH | 13 | Cortana、Windows search|
+| ZBID_IMMERSIVE_SEARCH | 13 | Cortana, Windows search|
 | ZBID_IMMERSIVE_NOTIFICATION | 4 | Operation Center (Notification Center)|
 | ZBID_IMMERSIVE_EDGY | 7 |  |
 | ZBID_SYSTEM_TOOLS | 15 | Top task manager, Alt+Tab menu|
@@ -58,7 +58,7 @@ The order of bands are the following, from the lowest to the highest Z-order:
 
 ### ZBID_DESKTOP
 
-![ZBID_DESKTOP](https://github.com/xmc0211/WindowTopMost/blob/main/Assets/ZBID_DESKTOP.png?raw=true)
+![ZBID_DESKTOP](Assets/ZBID_DESKTOP.png?raw=true)
 
 ZBID_DESKTOP: this band is where all our window stays on. Let’s suppose you have 2 window here, Paint and Photos. Both are desktop windows, and they can overlap each other by just focusing a window or another. Now suppose that Paint window is topmost, now it will stay on top of Photos, regardless of its focus state.
 
