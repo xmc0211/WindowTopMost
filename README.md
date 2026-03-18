@@ -6,7 +6,7 @@ The earliest supported version of Windows: **Windows 8.x**
 
 - - -
 ### References
-i. [GitHub: killtimer0/uiaccess](killtimer0/uiaccess)
+i. [GitHub: killtimer0/uiaccess](https://github.com/killtimer0/uiaccess)
 
 ii. [GitHubGist: ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0)
 
