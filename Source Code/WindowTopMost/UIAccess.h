@@ -1,5 +1,5 @@
 //uiaccess-master from:https://github.com/killtimer0/uiaccess
-//source code from:https://www.bilibili.com/video/BV1HCwwegEVp
+//source code from: video BV1HCwwegEVp by WormWaker on bilibili
 
 #pragma once
 #include <windows.h>
