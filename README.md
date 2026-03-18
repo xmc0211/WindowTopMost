@@ -6,15 +6,14 @@ The earliest supported version of Windows: **Windows 8.x**
 
 - - -
 ### References
-[https://github.com/killtimer0/uiaccess](https://github.com/killtimer0/uiaccess)
+i. [GitHub: killtimer0/uiaccess](killtimer0/uiaccess)
 
-[https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0)
+ii. [GitHubGist: ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0)
 
-[https://blog.adeltax.com/window-z-order-in-windows-10](https://blog.adeltax.com/window-z-order-in-windows-10)
+iii. https://blog.adeltax.com/window-z-order-in-windows-10
 
-https://www.bilibili.com/video/BV1HCwwegEVp (Author: Wormwaker)
+iv. Video BV1HCwwegEVp by ```WormWaker``` on bilibili
 
-https://www.bilibili.com/opus/1023826882327478276 (Author: Wormwaker)
 - - -
 ## Defining Window Z-order “band”
 
