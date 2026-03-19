@@ -121,7 +121,7 @@ Function ```xxxCreateWindowEx``` performs two tests on parameter ```dwInternalFl
 
 - If the application **is a desktop application**, the **first bit must not be set**, otherwise ```ERROR_ACCESS_DENIED``` will be reported.
 
-- If the application **is an 'Immersive Broker'**, the **second bit must not be set**, otherwise ```ERROR_ACCESS_DENIED``` will be reported too.
+- If the application **is not an 'Immersive Broker'**, the **second bit must not be set**, otherwise ```ERROR_ACCESS_DENIED``` will be reported too.
 
 Inside functions ```IsDesktopApp``` and ```IsImmersiveBroker```:
 
