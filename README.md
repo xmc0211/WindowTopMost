@@ -33,7 +33,7 @@ The order of bands are the following, from the lowest to the highest Z-order:
 
 | ZBID Name | Value | Description |
 | :-----: | :-----: | :----- |
-| ZBID_DEFAULT | 0 | Default Z segment（ZBID_DESKTOP）|
+| ZBID_DEFAULT | 0 | Default Z segment|
 | ZBID_DESKTOP | 1 | Normal window|
 | ZBID_IMMERSIVE_RESTRICTED | 14 | \[Generally not used\]|
 | ZBID_IMMERSIVE_BACKGROUND | 12 |  |
