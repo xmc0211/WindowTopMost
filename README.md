@@ -14,6 +14,8 @@ iii. https://blog.adeltax.com/window-z-order-in-windows-10
 
 iv. Video BV1HCwwegEVp by ```WormWaker``` on bilibili
 
+v. [Github: amarmer/SetForegroundWindow](https://github.com/amarmer/SetForegroundWindow)
+
 - - -
 ## Defining Window Z-order “band”
 
