@@ -111,6 +111,10 @@ The order of bands are the following, from the lowest to the highest Z-order:
 
 ```ZBID_UIACCESS```: used by magnifier and on-screen keyboard. This band is typically used for assistive technology applications (UIAccess).
 
+
+> [!NOTE]
+> Due to unknown reasons, using ```ZBID_IMMERSIVE_RESTRICTED``` will still result in access being denied.
+
 - - -
 
 ## Technical Parts
