@@ -12,7 +12,7 @@ ii. [GitHubGist: ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.c
 
 iii. https://blog.adeltax.com/window-z-order-in-windows-10
 
-iv. Video BV1HCwwegEVp by ```WormWaker``` on bilibili
+iv. Video BV1HCwwegEVp on bilibili by ([Github: https://github.com/noexcept2005](https://github.com/noexcept2005))
 
 v. [Github: amarmer/SetForegroundWindow](https://github.com/amarmer/SetForegroundWindow)
 
