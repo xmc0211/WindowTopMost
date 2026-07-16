@@ -22,9 +22,9 @@
 
 #define __WTM_IS_COMPILING
 
-#include "../Common Headers/Framework.h"
-#include "../Common Headers/ThreadStopHandler.h"
-#include "../Common Headers/WindowTopMost.h"
+#include "Common Headers/Framework.h"
+#include "Common Headers/ThreadStopHandler.h"
+#include "Common Headers/WindowTopMost.h"
 #include <TlHelp32.h>
 #include <Windows.h>
 #include <VersionHelpers.h>
@@ -609,7 +609,7 @@ BOOL WTMAPI WTMEnableUIAccess(
     }
 }
 
-// Create the top-level window using UIAccess and verify if the Z segment is correct. If an error occurs, return NULL.
+// Create the top-level window using UIAccess and verify if the Z-Order band is correct. If an error occurs, return NULL.
 // The application will restart.
 _Success_(return != NULL)
 HWND WTMAPI WTMCreateUIAccessWindowW(
@@ -653,7 +653,7 @@ HWND WTMAPI WTMCreateUIAccessWindowW(
         return NULL;
     }
 
-	// Verify Z sequence segment
+	// Verify Z-Order band
 	DWORD bandCheck;
     BOOL bRes = pGetWindowBand(hWindow, &bandCheck);
     if (bRes) {

@@ -24,7 +24,7 @@
 // 1. Due to functional requirements, please make sure to place IAMKeyHacker.DLL in the same directory as the application.
 // 2. Need to ensure Explorer.EXE runs normally and stably when called, as it requires injecting DLL into Explorer.EXE performs operations.
 // 3. It is necessary to ensure that the application can end normally so that the injected DLL can be uninstalled. If it cannot be guaranteed, 
-//    please call the WTMUninit function after not using the library function. (Can be called multiple times)
+//    please call the WTMUninit function after not using the library function.
 // 4. You MUST call WTMInit before calling other functions of the library.
 // 5. Due to the limitations of Windows UIPI, calling interface WTMCreateWindowInBand or WTMCreateWindowInBandEx requires consistency with 
 // the permissions of Explorer.EXE responsible for the desktop.
@@ -47,13 +47,15 @@
 #include "ErrorCodes.h"
 
 
+// NOTE: You can define "WTM_DISABLE_STATIC_VERSION_CHECKING" to disable these version checks if you want to generate programs that run on other versions of Windows. (the generated program will still dynamically detect the Windows version.)
+
 // Windows 7 and below versions do not support the use of Z-Order bands. If you want to place the window at the forefront, you can periodically call SetWindowPos to place it at the top.
-#if WINVER < 0x0800 || _WIN32_WINNT < 0x0800
+#if (WINVER < 0x0800 || _WIN32_WINNT < 0x0800) && !defined(WTM_DISABLE_STATIC_VERSION_CHECKING)
 #error Windows 7 and below versions are not applicable to this library. Please consider using 'SetWindowPos'.
 #endif
 
 // Some ZBID are only available for Windows 10 and above. Add the ZBID_UNUSED_ prefix to ZBID that are not supported in the current version.
-#if WINVER >= 0x0A00 || _WIN32_WINNT >= 0x0A00
+#if (WINVER >= 0x0A00 || _WIN32_WINNT >= 0x0A00) && !defined(WTM_DISABLE_STATIC_VERSION_CHECKING)
 #define WIN10UP(i) i
 #else
 #define WIN10UP(i) ZBID_UNUSED_ ## i
@@ -117,7 +119,7 @@ BOOL WTMAPI WTMUninit();
 _Success_(return == TRUE)
 BOOL WTMAPI WTMEnableUIAccess(BOOL bEnable);
 
-// Create the top-level window using UIAccess and verify if the Z segment is correct. If an error occurs, return NULL.
+// Create the top-level window using UIAccess and verify if the Z-Order band is correct. If an error occurs, return NULL.
 // The application will restart.
 _Success_(return != NULL)
 HWND WTMAPI WTMCreateUIAccessWindowW(
@@ -166,11 +168,13 @@ BOOL WTMAPI WTMSetWindowBand(
 
 // CreateWindowInBand that does not deny access.
 // It will return NULL if an error occurs.
+// 
+// NOTE: This feature is still under testing and is currently unstable. Please use it with caution.
 //
 // Since real API functions are called in Explorer.EXE, calling these two function interface here has certain restrictions:
 // 1. When registering a window class, the CS_GLOBALCLASS style should be set to ensure that Explorer.EXE can access the window class;
 // 2. The window message loop has already been written in IAMWorker, and after calling the interface, you cannot write a message loop in your code.
-// 3. Real API functions does not support some window segments.
+// 3. Real API functions does not support some window Z-Order bands.
 // If you want to implement this feature more stably or flexibly, please first create a window with CreateWindowEx and then set Z-Order band with SetWindowBand.
 //
 _Success_(return != NULL)
@@ -213,11 +217,13 @@ HWND WTMAPI WTMCreateWindowInBandA(
 
 // CreateWindowInBand that does not deny access.
 // It will return NULL if an error occurs.
+// 
+// NOTE: This feature is still under testing and is currently unstable. Please use it with caution.
 //
 // Since real API functions are called in Explorer.EXE, calling these two function interface here has certain restrictions:
 // 1. When registering a window class, the CS_GLOBALCLASS style should be set to ensure that Explorer.EXE can access the window class;
 // 2. The window message loop has already been written in IAMWorker, and after calling the interface, you cannot write a message loop in your code.
-// 3. Real API functions does not support some window segments.
+// 3. Real API functions does not support some window Z-Order bands.
 // If you want to implement this feature more stably or flexibly, please first create a window with CreateWindowEx and then set Z-Order band with SetWindowBand.
 //
 _Success_(return != NULL)

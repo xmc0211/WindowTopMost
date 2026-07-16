@@ -25,8 +25,8 @@
 #include <string>
 #include <iostream>
 #include <cassert>
-#include "../Common Headers/ThreadStopHandler.h"
-#include "../Common Headers/WindowTopMost.h"
+#include "Common Headers/ThreadStopHandler.h"
+#include "Common Headers/WindowTopMost.h"
 #include "Convert.h"
 using namespace std;
 
@@ -216,7 +216,7 @@ void PrintZBIDs() {
 	cout << R"(
 Please input Z-order Band:
 +---------------------------------------------------------------------------------------+
-|     ZBID_DEFAULT                       [0]     Default Z segment (just means default) |
+|     ZBID_DEFAULT                       [0]     Default Z-Order band (just a mark)     |
 | B = ZBID_DESKTOP                       [1]     Normal window                          |
 | P = ZBID_IMMERSIVE_RESTRICTED          [15]    ** Generally not used **               |
 | M = ZBID_IMMERSIVE_BACKGROUND          [12]                                           |
@@ -382,9 +382,8 @@ void Show_CreateWindowInBand() {
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	cout << R"(Do you want to enable 'Window always at top'? (0/1)
-Warning: If enabled, the ZBID_DESKTOP segment window may flicker with other windows such as 
-ZBID_IMMERSIVE_RESTRICTED and affect system performance. Please be cautious when opening 
-this option.
+Warning: If enabled, the window may flicker and affect system performance. 
+Please be cautious when opening this option.
  >)";
 	cin >> CurrentWindow.bIsAlwaysOnTop;
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -438,7 +437,7 @@ void Show_GetIAMKey() {
 	ULONGLONG nIAMKey = 0;
 	if (!WTMGetIAMKey(&nIAMKey)) {
 		DWORD nError = GetLastError();
-		cout << endl << "Sorry, Can not get IAM access key. (" << nError << ")" << endl;
+		cout << endl << "Sorry, We can not get IAM access key. (" << nError << ")" << endl;
 		PrintErrorMessage(nError);
 		cout << endl;
 		cout << R"(
@@ -584,7 +583,8 @@ Launcher.EXE [/?] [/Set | /Get] hWnd-Number <arguments>
     /?      Show this help message.
 
     /Set    Set window Z-order band.
-            Prompt:   Launcher.EXE /Set hWnd-Number hWndInsertAfter-Number dwBand [/Top]
+            Prompt: 
+                Launcher.EXE /Set hWnd-Number hWndInsertAfter-Number dwBand [/Top]
             Output: Error information.
 
     /Get    Get window Z-order band.
@@ -592,7 +592,7 @@ Launcher.EXE [/?] [/Set | /Get] hWnd-Number <arguments>
                 Launcher.EXE /Get hWnd-Number
             Output: Window Z-order band. (or Error information)
 
-	/Unload	Attempt to uninstall IAMWorker remaining in Explorer.EXE due to crash or other reason
+	/Unload	Attempt to uninstall IAMWorker remaining in Explorer.EXE due to crash or other reason.
 
     Numbers are represented as unsigned decimal integers.
 

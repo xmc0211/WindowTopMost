@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "../Common Headers/Framework.h"
-#include "../Common Headers/ThreadStopHandler.h"
+#include "Common Headers/Framework.h"
+#include "Common Headers/ThreadStopHandler.h"
 #include <shlobj_core.h>
 #include "mhook-lib/mhook.h"
 #include "IAMKeyBlock.h"

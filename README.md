@@ -5,23 +5,26 @@ A library that use the window Z-order band to place the window on top of the sys
 The earliest supported version of Windows: **Windows 8.x**
 
 - - -
+
 ### References
-i. [GitHub: killtimer0/uiaccess](https://github.com/killtimer0/uiaccess)
 
-ii. [GitHubGist: ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0)
+i. Video BV1HCwwegEVp on bilibili by ([Github: https://github.com/noexcept2005](https://github.com/noexcept2005))
 
-iii. https://blog.adeltax.com/window-z-order-in-windows-10
+ii. [GitHub: killtimer0/uiaccess](https://github.com/killtimer0/uiaccess)
 
-iv. Video BV1HCwwegEVp on bilibili by ([Github: https://github.com/noexcept2005](https://github.com/noexcept2005))
+iii. [GitHubGist: ADeltaX/80d220579400a95c336af0eec372ecb0](https://gist.github.com/ADeltaX/80d220579400a95c336af0eec372ecb0)
+
+iv. https://blog.adeltax.com/window-z-order-in-windows-10
 
 v. [Github: amarmer/SetForegroundWindow](https://github.com/amarmer/SetForegroundWindow)
 
 - - -
-## Defining Window Z-order “band”
+
+## Defining Window Z-order "band"
 
 ![Windows z-order](Assets/Windows%20z-order.png?raw=true)
 
-For clarity, in this context the word “band” means group of Z-orders.
+For clarity, in this context the word "band" means group of Z-orders.
 
 **Until Windows 8, there was only one band, the ```ZBID_DESKTOP``` band**, which is the default one when you write an application that creates a new window and when it gains focus it will go to the highest Z-order meaning it will go on top of other windows. This is true unless there are **topmost windows**. As the name says, **it will stay on top of other windows**. What if there are 2 topmost windows? Well, in this case, **the last window to gain focus will stay on top of other one**. In the end there are 2 groups of Z-order in the ```ZBID_DESKTOP``` band, normal and topmost. These will never be "touched" by each other, **topmost window will always stay on top of other normal window**, no matter what.
 
@@ -33,27 +36,27 @@ _Windows will not process ```ZBID_DEFAULT```, it only indicated the default Z-Or
 
 The order of bands are the following, from the lowest to the highest Z-order:
 
-| ZBID Name | Value | Description |
-| :-----: | :-----: | :----- |
-| ZBID_DEFAULT | 0 | Default Z segment|
-| ZBID_DESKTOP | 1 | Normal window|
-| ZBID_IMMERSIVE_RESTRICTED | 14 | \[Generally not used\]|
-| ZBID_IMMERSIVE_BACKGROUND | 12 |  |
-| ZBID_IMMERSIVE_INACTIVEDOCK | 9 | \[Generally not used\]|
-| ZBID_IMMERSIVE_INACTIVEMOBODY | 8 | \[Generally not used\]|
-| ZBID_IMMERSIVE_ACTIVEDOCK | 11 | \[Generally not used\]|
-| ZBID_IMMERSIVE_ACTIVEMOBODY | 10 | \[Generally not used\]|
-| ZBID_IMMERSIVE_APPCHROME | 5 | Task View (Win+Tab menu)|
-| ZBID_IMMERSIVE_MOGO | 6 | Start menu, taskbar|
-| ZBID_IMMERSIVE_SEARCH | 13 | Cortana, Windows search|
-| ZBID_IMMERSIVE_NOTIFICATION | 4 | Operation Center (Notification Center)|
-| ZBID_IMMERSIVE_EDGY | 7 |  |
-| ZBID_SYSTEM_TOOLS | 15 | Top task manager, Alt+Tab menu|
-| ZBID_LOCK (>= Win10) | 16 | Lock screen interface|
-| ZBID_ABOVELOCK_UX (>= Win10) | 17 | real-time playback window|
-| ZBID_IMMERSIVE_IHM | 3 |  |
-| ZBID_GENUINE_WINDOWS | 14 | 'Activate Windows' window|
-| ZBID_UIACCESS | 2 | Screen keyboard, magnifying glass|
+| ZBID Name                     | Value | Description                            |
+|:-----------------------------:|:-----:|:-------------------------------------- |
+| ZBID_DEFAULT                  | 0     | Default Z-Order band (just a mark)     |
+| ZBID_DESKTOP                  | 1     | Normal window                          |
+| ZBID_IMMERSIVE_RESTRICTED     | 14    | \[Generally not used\]                 |
+| ZBID_IMMERSIVE_BACKGROUND     | 12    |                                        |
+| ZBID_IMMERSIVE_INACTIVEDOCK   | 9     | \[Generally not used\]                 |
+| ZBID_IMMERSIVE_INACTIVEMOBODY | 8     | \[Generally not used\]                 |
+| ZBID_IMMERSIVE_ACTIVEDOCK     | 11    | \[Generally not used\]                 |
+| ZBID_IMMERSIVE_ACTIVEMOBODY   | 10    | \[Generally not used\]                 |
+| ZBID_IMMERSIVE_APPCHROME      | 5     | Task View (Win+Tab menu)               |
+| ZBID_IMMERSIVE_MOGO           | 6     | Start menu, taskbar                    |
+| ZBID_IMMERSIVE_SEARCH         | 13    | Cortana, Windows search                |
+| ZBID_IMMERSIVE_NOTIFICATION   | 4     | Operation Center (Notification Center) |
+| ZBID_IMMERSIVE_EDGY           | 7     |                                        |
+| ZBID_SYSTEM_TOOLS             | 15    | Top task manager, Alt+Tab menu         |
+| ZBID_LOCK (Win 10 up)         | 16    | Lock screen interface                  |
+| ZBID_ABOVELOCK_UX (Win 10 up) | 17    | real-time playback window              |
+| ZBID_IMMERSIVE_IHM            | 3     |                                        |
+| ZBID_GENUINE_WINDOWS          | 14    | 'Activate Windows' window              |
+| ZBID_UIACCESS                 | 2     | Screen keyboard, magnifying glass      |
 
 ## Visualizing Window bands
 
@@ -111,7 +114,6 @@ The order of bands are the following, from the lowest to the highest Z-order:
 
 ```ZBID_UIACCESS```: used by magnifier and on-screen keyboard. This band is typically used for assistive technology applications (UIAccess).
 
-
 > [!NOTE]
 > Due to unknown reasons, using ```ZBID_IMMERSIVE_RESTRICTED``` will still result in access being denied.
 
@@ -150,6 +152,7 @@ enum ZBID : DWORD {
 ### Some private api function introduction
 
 #### CreateWindowInBand
+
 Private api function found in ```User32.DLL```. Since it’s not present in Windows SDK headers/libs, you have to use ```GetModuleHandle``` and ```GetProcAddress``` to get access to that function.
 
 ```CreateWindowInBand``` function is the same as ```CreateWindowEx``` except it has 1 more parameter, ```dwBand```, that is where you specify the band on which the window should stay (ZBID).
@@ -173,6 +176,7 @@ HWND WINAPI CreateWindowInBand(
 ```
 
 #### CreateWindowInBandEx
+
 Private api function found in ```User32.DLL```.
 
 Same as ```CreateWindowInBand``` plus 1 parameter, ```dwTypeFlags``` (Unknown purpose).
@@ -197,6 +201,7 @@ HWND WINAPI CreateWindowInBandEx(
 ```
 
 #### SetWindowBand
+
 Private api function found in ```User32.DLL```.
 
 ```SetWindowBand``` function has 3 parameters, ```hWnd```, ```hWndInserAfter``` and ```dwBand```. Same as 2 first parameters from ```SetWindowPos```. The returned value indicates success or failure. In case of failure call ```GetLastError```. Most likely, you will got a nice ```0x5``` (```ACCESS_DENIED```).
@@ -210,6 +215,7 @@ BOOL WINAPI SetWindowBand(
 ```
 
 #### GetWindowBand
+
 Private api function found in ```User32.DLL```.
 
 ```GetWindowBand``` function has 2 parameters, ```hWnd``` and ```pdwBand```. ```pdwBand``` is a pointer that receives the band (ZBID) of the HWND. The returned value indicates success or failure. In case of failure call ```GetLastError```.
@@ -222,6 +228,7 @@ BOOL WINAPI GetWindowBand(
 ```
 
 #### NtUserEnableIAMAccess
+
 Private api function found in ```User32.DLL```.
 
 ```NtUserEnableIAMAccess``` function has 2 parameters, ```key``` and ```enable```. ```enable``` is a flag that specifies whether IAM access is enabled or not. ```key``` is the IAM access key. In case of failure call ```GetLastError```.
@@ -234,6 +241,7 @@ BOOL WINAPI NtUserEnableIAMAccess(
 ```
 
 #### NtUserAcquireIAMKey
+
 Private api function found in ```User32.DLL```.
 
 ```NtUserAcquireIAMKey``` function has only 1 parameter, ```pkey```. ```pkey``` is a pointer to ULONG64 used to receive the created IAM access key.
@@ -246,7 +254,7 @@ BOOL WINAPI NtUserAcquireIAMKey(
 
 - - -
 
-### Can I call these APIs?
+### Can I call these APIs
 
 Short reply: Some yes (under certain conditions), some no.
 
@@ -260,7 +268,8 @@ Short reply: Some yes (under certain conditions), some no.
 
 ```NtUserAcquireIAMKey``` never works **when ```Explorer.EXE``` is running**.
 
-#### Why I can’t call using other ZBIDs?
+#### Why I can’t call using other ZBIDs
+
 Because Microsoft added extra checks for these bands.
 
 For ```CreateWindowInBand(Ex)```, to be able to use more ZBIDs, the program **must have** a special PE header, named **```.imrsiv```** (bss_seg), flagged with **```IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY```** and be **signed with a Microsoft certificate ```Microsoft Windows```**.
@@ -293,18 +302,22 @@ The illustration is for reference only, please refer to the actual situation.
 
 - Boot Menu
 
-![Boot](Assets/Boot.png?raw=true)
-
-- CreateWindowInBand
-
-![CreateWindowInBand_Taskmgr](Assets/CreateWindowInBand_Taskmgr.png?raw=true)
-
-![CreateWindowInBand_All](Assets/CreateWindowInBand_All.png?raw=true)
+![Boot_Menu](Assets/Effect_Boot_Menu.png?raw=true)
 
 - GetWindowBand
 
-![GetWindowBand_StartMenu](Assets/GetWindowBand_StartMenu.png?raw=true)
+![Get1](Assets/Effect_Get1.png?raw=true)
 
-![GetWindowBand_Taskmgr](Assets/GetWindowBand_Taskmgr.png?raw=true)
+- CreateWindowInBand
+
+![Create1](Assets/Effect_Create1.png?raw=true)
+
+![Create2](Assets/Effect_Create2.png?raw=true)
+
+- SetWindowBand
+
+![Set1](Assets/Effect_Set1.png?raw=true)
+
+![Set2](Assets/Effect_Set2.png?raw=true)
 
 - - -
